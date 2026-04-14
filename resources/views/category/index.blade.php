@@ -58,6 +58,18 @@
                 <input type="text" name="name" value="{{ old('name') }}"
                     class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400">
             </div>
+            {{-- カテゴリカラー --}}
+            <label class="block text-sm font-medium mb-1">色</label>
+            <select name="color" class="w-full px-3 py-2 border rounded">
+                <option value="">（なし）</option>
+                <option value="red" {{ old('color') == 'red' ? 'selected' : '' }}>🔴 赤</option>
+                <option value="yellow" {{ old('color') == 'yellow' ? 'selected' : '' }}>🟡 黄</option>
+                <option value="green" {{ old('color') == 'green' ? 'selected' : '' }}>🟢 緑</option>
+                <option value="blue" {{ old('color') == 'blue' ? 'selected' : '' }}>🔵 青</option>
+                <option value="purple" {{ old('color') == 'purple' ? 'selected' : '' }}>🟣 紫</option>
+                <option value="pink" {{ old('color') == 'pink' ? 'selected' : '' }}>💗 ピンク</option>
+                <option value="gray" {{ old('color') == 'gray' ? 'selected' : '' }}>⚫ グレー</option>
+            </select>
             <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">
                 追加
             </button>

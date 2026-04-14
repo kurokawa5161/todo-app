@@ -22,6 +22,7 @@ class CategoryController extends Controller
         $category = new Category();
         $category->name = $request->name;
         $category->user_id = auth()->id();
+        $category->color = $request->color;
         $category->save();
         return redirect()->route('category.index');
     }

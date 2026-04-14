@@ -24,6 +24,7 @@ class CategoryRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:50',
+            'color' => 'nullable|string|in:red,yellow,green,blue,purple,pink,gray'
         ];
     }
 }

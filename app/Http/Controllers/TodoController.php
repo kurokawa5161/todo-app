@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\TodoRequest;
 use App\Models\Todo;
+use App\Models\Comment;
 
 class TodoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = auth()->user()->todos()->with('category');
+        $query = auth()->user()->todos()->whereNull('parent_id')->with(['category', 'children']);
 
         //絞り込み
         $filter = $request->filter;
@@ -24,6 +25,7 @@ class TodoController extends Controller
             $query = $query->where('title', 'like', '%' . $title . '%');
         }
         //並び替え
+        $query->orderBy('is_pinned', 'desc');
         switch ($request->sort) {
             case 'end_date_asc':
                 $query->orderBy('end_date', 'asc');
@@ -53,7 +55,7 @@ class TodoController extends Controller
             'COUNT(*) as total,
             COUNT(CASE WHEN completed_at IS NULL THEN 1 END) as active,
             COUNT(CASE WHEN completed_at IS NOT NULL THEN 1 END) as done'
-        )->first();
+        )->whereNull('parent_id')->first();
 
         $data = [
             'items' => $items,
@@ -74,20 +76,23 @@ class TodoController extends Controller
         $todo->start_date = $request->start_date;
         $todo->end_date = $request->end_date;
         $todo->category_id = $request->category_id;
-        $todo->priority = $request->priority;
+        $todo->priority = $request->priority ?: 2;
+        $todo->parent_id = $request->parent_id;
         $todo->save();
         return redirect()->route('todos.index');
     }
 
     public function edit(Todo $todo)
     {
+        $todo->load('comments.user');
         $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
         $data = [
             'item' => $todo,
-            'categories' => $categories
+            'categories' => $categories,
         ];
         return view('todos.edit', $data);
     }
+
     public function update(TodoRequest $request, Todo $todo)
     {
         $todo->title = $request->title;
@@ -111,6 +116,17 @@ class TodoController extends Controller
     public function destroy(Todo $todo)
     {
         $todo->delete();
+        return redirect()->route('todos.index');
+    }
+
+    public function togglePin(Todo $todo)
+    {
+        if ($todo->is_pinned) {
+            $todo->is_pinned = FALSE;
+        } else {
+            $todo->is_pinned = TRUE;
+        }
+        $todo->save();
         return redirect()->route('todos.index');
     }
 }

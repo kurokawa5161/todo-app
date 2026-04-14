@@ -39,104 +39,166 @@
                 完了済({{ $counts->done }})
             </a>
         </div>
-        <form action="{{ route('todos.index') }}" method="GET" class="mb-4">
+        <form action="{{ route('todos.index') }}" method="GET" class="mb-4 flex gap-2">
             <input type="hidden" name="filter" value="{{ $filter }}">
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="タイトルで検索"
-                class="w-full px-3 py-2 border rounded">
-            <div>
-                <label class="block text-sm font-medium mb-1">並び替え</label>
-                <select name="sort" class="w-full px-3 py-2 border rounded" onchange="this.form.submit()">
-                    <option value="">（なし）</option>
-                    <option value="end_date_asc" {{ $sort == 'end_date_asc' ? 'selected' : '' }}>
-                        締切が近い順
-                    </option>
-                    <option value="end_date_desc" {{ $sort == 'end_date_desc' ? 'selected' : '' }}>
-                        締切が遠い順
-                    </option>
-                    <option value="created_at_desc" {{ $sort == 'created_at_desc' ? 'selected' : '' }}>
-                        作成日 新しい順
-                    </option>
-                    <option value="priority_asc" {{ $sort == 'priority_asc' ? 'selected' : '' }}>
-                        優先度高→低
-                    </option>
-                    <option value="title_asc" {{ $sort == 'title_asc' ? 'selected' : '' }}>
-                        タイトル昇順
-                    </option>
-                </select>
-            </div>
+
+            {{-- 検索欄 --}}
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="🔍 タイトルで検索"
+                class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+            {{-- 並び替え --}}
+            <select name="sort" onchange="this.form.submit()"
+                class="w-48 px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <option value="">並び替え</option>
+                <option value="end_date_asc" {{ $sort == 'end_date_asc' ? 'selected' : '' }}>締切が近い順</option>
+                <option value="end_date_desc" {{ $sort == 'end_date_desc' ? 'selected' : '' }}>締切が遠い順</option>
+                <option value="created_at_desc" {{ $sort == 'created_at_desc' ? 'selected' : '' }}>作成日 新しい順</option>
+                <option value="priority_asc" {{ $sort == 'priority_asc' ? 'selected' : '' }}>優先度 高→低</option>
+                <option value="title_asc" {{ $sort == 'title_asc' ? 'selected' : '' }}>タイトル昇順</option>
+            </select>
         </form>
+
 
         {{-- タスク一覧 --}}
         <ul class="space-y-2 mb-6">
             @foreach ($items as $item)
-                <li class="flex items-center gap-2 p-3 border rounded hover:bg-gray-50">
-                    @if ($item->completed_at)
-                        <span>✅</span>
-                        <s class="flex-1 text-gray-400">{{ $item->title }}</s>
-                    @else
-                        <span>⬜</span>
-                        <span class="flex-1">{{ $item->title }}</span>
-                    @endif
-                    @if ($item->category)
-                        <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">
-                            {{ $item->category->name }}
-                        </span>
-                    @endif
+                @php
+                    $colorClass = match ($item->category->color ?? 'purple') {
+                        'red' => 'bg-red-100 text-red-700',
+                        'yellow' => 'bg-yellow-100 text-yellow-700',
+                        'green' => 'bg-green-100 text-green-700',
+                        'blue' => 'bg-blue-100 text-blue-700',
+                        'purple' => 'bg-purple-100 text-purple-700',
+                        'pink' => 'bg-pink-100 text-pink-700',
+                        'gray' => 'bg-gray-100 text-gray-700',
+                        default => 'bg-purple-100 text-purple-700',
+                    };
+                @endphp
 
-                    @php
-                        $priorityBadge = match ($item->priority) {
-                            1 => ['🔴 高', 'bg-red-100 text-red-700'],
-                            2 => ['🟡 中', 'bg-yellow-100 text-yellow-700'],
-                            3 => ['🟢 低', 'bg-green-100 text-green-700'],
-                            default => null,
-                        };
-                    @endphp
+                <li class="p-3 border rounded hover:bg-gray-50">
+                    {{-- 親タスクの情報（タイトル、バッジ、ボタンなど） --}}
+                    <div class="flex items-center gap-2">
+                        @if ($item->completed_at)
+                            <span>✅</span>
+                            <s class="flex-1 text-gray-400">{{ $item->title }}</s>
+                        @else
+                            <span>⬜</span>
+                            <span class="flex-1">{{ $item->title }}</span>
+                        @endif
 
-                    @if ($priorityBadge)
-                        <span class="text-xs px-2 py-1 rounded {{ $priorityBadge[1] }}">
-                            {{ $priorityBadge[0] }}
-                        </span>
-                    @endif
+                        @if ($item->category)
+                            <span class="text-xs px-2 py-1 rounded {{ $colorClass }}">
+                                {{ $item->category->name }}
+                            </span>
+                        @endif
 
+                        @php
+                            $priorityBadge = match ($item->priority) {
+                                1 => ['🔴 高', 'bg-red-100 text-red-700'],
+                                2 => ['🟡 中', 'bg-yellow-100 text-yellow-700'],
+                                3 => ['🟢 低', 'bg-green-100 text-green-700'],
+                                default => null,
+                            };
+                        @endphp
 
-                    @php
-                        $isOverdue = !$item->completed_at && $item->end_date->isPast();
-                        $isSoon = !$item->completed_at && !$isOverdue && $item->end_date->lte(now()->addDay());
-                    @endphp
+                        @if ($priorityBadge)
+                            <span class="text-xs px-2 py-1 rounded {{ $priorityBadge[1] }}">
+                                {{ $priorityBadge[0] }}
+                            </span>
+                        @endif
 
-                    <span
-                        class="text-sm px-2 py-1 rounded
+                        <form action="{{ route('todos.pin', $item->id) }}" method="POST" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="text-lg hover:scale-110 transition">
+                                {{ $item->is_pinned ? '⭐' : '☆' }}
+                            </button>
+                        </form>
+
+                        @php
+                            $isOverdue = !$item->completed_at && $item->end_date->isPast();
+                            $isSoon = !$item->completed_at && !$isOverdue && $item->end_date->lte(now()->addDay());
+                        @endphp
+
+                        <span
+                            class="text-sm px-2 py-1 rounded
                             {{ $isOverdue ? 'bg-red-100 text-red-700 font-bold' : '' }}
                             {{ $isSoon ? 'bg-orange-100 text-orange-700' : '' }}
                             {{ !$isOverdue && !$isSoon ? 'text-gray-500' : '' }}">
-                        @if ($isOverdue)
-                            ⚠️
-                        @elseif ($isSoon)
-                            ⏰
-                        @endif
-                        締切: {{ $item->end_date->format('Y-m-d') }}
-                    </span>
+                            @if ($isOverdue)
+                                ⚠️
+                            @elseif ($isSoon)
+                                ⏰
+                            @endif
+                            締切: {{ $item->end_date->format('Y-m-d') }}
+                        </span>
 
-                    <form action="{{ route('todos.edit', $item->id) }}" method="GET" class="inline">
-                        @csrf
-                        <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                            編集
-                        </button>
-                    </form>
+                        <form action="{{ route('todos.edit', $item->id) }}" method="GET" class="inline">
+                            @csrf
+                            <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                編集
+                            </button>
+                        </form>
 
-                    <form action="{{ route('todos.toggle', $item->id) }}" method="POST" class="inline">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                            {{ $item->completed_at ? '戻す' : '完了' }}
-                        </button>
-                    </form>
+                        <form action="{{ route('todos.toggle', $item->id) }}" method="POST" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                {{ $item->completed_at ? '戻す' : '完了' }}
+                            </button>
+                        </form>
 
-                    <form action="{{ route('todos.destroy', $item->id) }}" method="POST" class="inline">
+                        <form action="{{ route('todos.destroy', $item->id) }}" method="POST" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                                削除
+                            </button>
+                        </form>
+                    </div>
+                    {{-- サブタスク --}}
+                    @if ($item->children->count() > 0)
+                        <ul class="ml-8 mt-2 space-y-1">
+                            @foreach ($item->children as $child)
+                                <li class="flex items-center gap-2 p-2 border rounded bg-gray-50">
+                                    @if ($child->completed_at)
+                                        ✅ <s class="flex-1 text-gray-400">{{ $child->title }}</s>
+                                    @else
+                                        ⬜ <span class="flex-1">{{ $child->title }}</span>
+                                    @endif
+                                    {{-- 完了・削除ボタン --}}
+                                    <form action="{{ route('todos.toggle', $child->id) }}" method="POST"
+                                        class="inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                            class="px-2 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                                            {{ $child->completed_at ? '戻す' : '完了' }}
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ route('todos.destroy', $child->id) }}" method="POST"
+                                        class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="px-2 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600">
+                                            削除
+                                        </button>
+                                    </form>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    {{-- サブタスク追加フォーム --}}
+                    <form action="{{ route('todos.store') }}" method="POST" class="ml-8 mt-2 flex gap-2">
                         @csrf
-                        @method('DELETE')
-                        <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                            削除
+                        <input type="hidden" name="parent_id" value="{{ $item->id }}">
+                        <input type="text" name="title" placeholder="サブタスク追加"
+                            class="flex-1 px-2 py-1 text-sm border rounded">
+                        <button type="submit"
+                            class="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700">
+                            追加
                         </button>
                     </form>
                 </li>

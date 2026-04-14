@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CommentController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -15,6 +16,7 @@ Route::prefix('todos')->name('todos.')->middleware('auth')->group(function () {
     Route::put('/{todo}', [TodoController::class, 'update'])->name('update');
     Route::patch('/{todo}/toggle', [TodoController::class, 'toggle'])->name('toggle');
     Route::delete('/{todo}', [TodoController::class, 'destroy'])->name('destroy');
+    Route::patch('/{todo}/pin', [TodoController::class, 'togglePin'])->name('pin');
 });
 
 Route::get('/dashboard', function () {
@@ -32,5 +34,10 @@ require __DIR__ . '/auth.php';
 Route::prefix('category')->name('category.')->middleware('auth')->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->name('index');
     Route::post('/', [CategoryController::class, 'store'])->name('store');
-    Route::delete('/{category}', [CategoryController::class, 'store'::class, 'destroy'])->name('destroy');
+    Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
+});
+
+Route::name('comments.')->middleware('auth')->group(function () {
+    Route::post('/todos/{todo}/comments', [CommentController::class, 'store'])->name('store');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('destroy');
 });
