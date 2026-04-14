@@ -29,7 +29,8 @@ class TodoRequest extends FormRequest
             'end_date' => 'nullable|date',
             'category_id' => 'nullable|integer|exists:categories,id',
             'priority' => 'nullable|integer|between:1,3',
-            'parent_id' => 'nullable|integer|exists:todos,id'
+            'parent_id' => 'nullable|integer|exists:todos,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1900',
         ];
     }
 }

@@ -15,7 +15,8 @@ class Todo extends Model
         'completed_at',
         'priority',
         'parent_id',
-        'is_pinned'
+        'is_pinned',
+        'image_path'
     ];
 
     protected $casts = [

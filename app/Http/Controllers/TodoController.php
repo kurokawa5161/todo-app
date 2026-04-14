@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\TodoRequest;
 use App\Models\Todo;
 use App\Models\Comment;
+use Illuminate\Support\Facades\Storage;
 
 class TodoController extends Controller
 {
@@ -78,6 +79,11 @@ class TodoController extends Controller
         $todo->category_id = $request->category_id;
         $todo->priority = $request->priority ?: 2;
         $todo->parent_id = $request->parent_id;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('todos', 'public');
+            $todo->image_path = $path;
+        }
+
         $todo->save();
         return redirect()->route('todos.index');
     }
@@ -101,7 +107,15 @@ class TodoController extends Controller
         $todo->end_date = $request->end_date;
         $todo->category_id = $request->category_id;
         $todo->priority = $request->priority;
+        if ($request->hasFile('image')) {
+            //画像削除
+            Storage::disk('public')->delete($todo->image_path);
+
+            $path = $request->file('image')->store('todos', 'public');
+            $todo->image_path = $path;
+        }
         $todo->save();
+
         return redirect()->route('todos.index');
     }
 
@@ -115,6 +129,10 @@ class TodoController extends Controller
 
     public function destroy(Todo $todo)
     {
+        //画像削除
+        if ($todo->image_path) {
+            Storage::disk('public')->delete($todo->image_path);
+        }
         $todo->delete();
         return redirect()->route('todos.index');
     }

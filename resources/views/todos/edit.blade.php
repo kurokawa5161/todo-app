@@ -23,7 +23,8 @@
         @endif
 
         {{-- 編集フォーム --}}
-        <form action="{{ route('todos.update', $item->id) }}" method="POST" class="space-y-3 border-t pt-4">
+        <form action="{{ route('todos.update', $item->id) }}" method="POST" class="space-y-3 border-t pt-4"
+            enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div>
@@ -77,6 +78,18 @@
                         value="{{ old('end_date', $item->end_date->format('Y-m-d')) }}"
                         class="w-full px-3 py-2 border rounded">
                 </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">画像</label>
+                @if ($item->image_path)
+                    <div class="mb-2">
+                        <img src="{{ asset('storage/' . $item->image_path) }}" class="max-w-xs rounded">
+                    </div>
+                @endif
+                <input type="file" name="image" accept="image/*" class="w-full px-3 py-2 border rounded">
+                @error('image')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
             </div>
             <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">
                 編集
