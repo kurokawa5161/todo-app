@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\facades\Route;
+use Illuminate\Support\Facades\Route;
 use App\Models\Todo;
 
 class AppServiceProvider extends ServiceProvider
