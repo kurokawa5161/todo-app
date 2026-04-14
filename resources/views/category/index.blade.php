@@ -11,10 +11,16 @@
     <div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
         <h1 class="text-3xl font-bold text-blue-600 mb-6">カテゴリ管理</h1>
 
-        <nav class="mb-4">
+        <nav class="mb-4 flex items-center justify-between">
             <a href="{{ route('todos.index') }}" class="text-blue-600 hover:underline">
                 → ToDo一覧へ
             </a>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">
+                    ログアウト
+                </button>
+            </form>
         </nav>
 
         {{-- カテゴリ一覧 --}}

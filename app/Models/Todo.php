@@ -12,7 +12,8 @@ class Todo extends Model
         'start_date',
         'end_date',
         'category_id',
-        'completed_at'
+        'completed_at',
+        'priority'
     ];
 
     protected $casts = [

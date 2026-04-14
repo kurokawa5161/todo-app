@@ -28,6 +28,7 @@ class TodoRequest extends FormRequest
             'start_date' => 'nullable|date',
             'end_date' => 'required|date',
             'category_id' => 'nullable|integer|exists:categories,id',
+            'priority' => 'required|integer|between:1,3',
         ];
     }
 }

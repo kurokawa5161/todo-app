@@ -8,31 +8,62 @@
 </head>
 
 <body class="bg-gray-100 min-h-screen p-8">
+
     <div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
+
         <h1 class="text-3xl font-bold text-blue-600 mb-6">ToDo一覧</h1>
 
-        <nav class="mb-4">
+        <nav class="mb-4 flex items-center justify-between">
             <a href="{{ route('category.index') }}" class="text-blue-600 hover:underline">
                 → カテゴリ管理へ
             </a>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">
+                    ログアウト
+                </button>
+            </form>
         </nav>
+
         <div class="flex gap-2 mb-4">
-            <a href="{{ route('todos.index') }}"
+            <a href="{{ route('todos.index', array_merge(request()->query(), ['filter' => null])) }}"
                 class="px-3 py-1 rounded {{ !$filter ? 'bg-blue-600 text-white' : 'bg-gray-200' }}">
-                全て
+                全て({{ $counts->total }})
             </a>
-            <a href="{{ route('todos.index', ['filter' => 'active']) }}"
+            <a href="{{ route('todos.index', array_merge(request()->query(), ['filter' => 'active'])) }}"
                 class="px-3 py-1 rounded {{ $filter === 'active' ? 'bg-blue-600 text-white' : 'bg-gray-200' }}">
-                未完了
+                未完了({{ $counts->active }})
             </a>
-            <a href="{{ route('todos.index', ['filter' => 'done']) }}"
+            <a href="{{ route('todos.index', array_merge(request()->query(), ['filter' => 'done'])) }}"
                 class="px-3 py-1 rounded {{ $filter === 'done' ? 'bg-blue-600 text-white' : 'bg-gray-200' }}">
-                完了済
+                完了済({{ $counts->done }})
             </a>
         </div>
         <form action="{{ route('todos.index') }}" method="GET" class="mb-4">
+            <input type="hidden" name="filter" value="{{ $filter }}">
             <input type="text" name="q" value="{{ request('q') }}" placeholder="タイトルで検索"
                 class="w-full px-3 py-2 border rounded">
+            <div>
+                <label class="block text-sm font-medium mb-1">並び替え</label>
+                <select name="sort" class="w-full px-3 py-2 border rounded" onchange="this.form.submit()">
+                    <option value="">（なし）</option>
+                    <option value="end_date_asc" {{ $sort == 'end_date_asc' ? 'selected' : '' }}>
+                        締切が近い順
+                    </option>
+                    <option value="end_date_desc" {{ $sort == 'end_date_desc' ? 'selected' : '' }}>
+                        締切が遠い順
+                    </option>
+                    <option value="created_at_desc" {{ $sort == 'created_at_desc' ? 'selected' : '' }}>
+                        作成日 新しい順
+                    </option>
+                    <option value="priority_asc" {{ $sort == 'priority_asc' ? 'selected' : '' }}>
+                        優先度高→低
+                    </option>
+                    <option value="title_asc" {{ $sort == 'title_asc' ? 'selected' : '' }}>
+                        タイトル昇順
+                    </option>
+                </select>
+            </div>
         </form>
 
         {{-- タスク一覧 --}}
@@ -51,6 +82,22 @@
                             {{ $item->category->name }}
                         </span>
                     @endif
+
+                    @php
+                        $priorityBadge = match ($item->priority) {
+                            1 => ['🔴 高', 'bg-red-100 text-red-700'],
+                            2 => ['🟡 中', 'bg-yellow-100 text-yellow-700'],
+                            3 => ['🟢 低', 'bg-green-100 text-green-700'],
+                            default => null,
+                        };
+                    @endphp
+
+                    @if ($priorityBadge)
+                        <span class="text-xs px-2 py-1 rounded {{ $priorityBadge[1] }}">
+                            {{ $priorityBadge[0] }}
+                        </span>
+                    @endif
+
 
                     @php
                         $isOverdue = !$item->completed_at && $item->end_date->isPast();
@@ -123,6 +170,22 @@
                     @endforeach
                 </select>
             </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">優先度</label>
+                <select name="priority" class="w-full px-3 py-2 border rounded">
+                    <option value="1" {{ old('priority') == 1 ? 'selected' : '' }}>
+                        高
+                    </option>
+                    <option value="2" {{ old('priority') == 2 ? 'selected' : '' }}>
+                        中
+                    </option>
+                    <option value="3" {{ old('priority') == 3 ? 'selected' : '' }}>
+                        低
+                    </option>
+                </select>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium mb-1">タイトル</label>
                 <input type="text" name="title" value="{{ old('title') }}"

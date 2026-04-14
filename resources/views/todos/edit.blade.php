@@ -42,6 +42,21 @@
             </div>
 
             <div>
+                <label class="block text-sm font-medium mb-1">優先度</label>
+                <select name="priority" class="w-full px-3 py-2 border rounded">
+                    <option value="1" {{ old('priority', $item->priority) == 1 ? 'selected' : '' }}>
+                        高
+                    </option>
+                    <option value="2" {{ old('priority', $item->priority) == 2 ? 'selected' : '' }}>
+                        中
+                    </option>
+                    <option value="3" {{ old('priority', $item->priority) == 3 ? 'selected' : '' }}>
+                        低
+                    </option>
+                </select>
+            </div>
+
+            <div>
                 <label class="block text-sm font-medium mb-1">タイトル</label>
                 <input type="text" name="title" value="{{ old('title', $item->title) }}"
                     class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400">
@@ -54,12 +69,14 @@
             <div class="flex gap-3">
                 <div class="flex-1">
                     <label class="block text-sm font-medium mb-1">開始日</label>
-                    <input type="date" name="start_date" value="{{ old('start_date', $item->start_date) }}"
+                    <input type="date" name="start_date"
+                        value="{{ old('start_date', $item->start_date?->format('Y-m-d')) }}"
                         class="w-full px-3 py-2 border rounded">
                 </div>
                 <div class="flex-1">
                     <label class="block text-sm font-medium mb-1">終了日</label>
-                    <input type="date" name="end_date" value="{{ old('end_date', $item->end_date) }}"
+                    <input type="date" name="end_date"
+                        value="{{ old('end_date', $item->end_date->format('Y-m-d')) }}"
                         class="w-full px-3 py-2 border rounded">
                 </div>
             </div>

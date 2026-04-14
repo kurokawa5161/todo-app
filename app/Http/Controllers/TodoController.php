@@ -10,8 +10,10 @@ class TodoController extends Controller
 {
     public function index(Request $request)
     {
+        $query = auth()->user()->todos()->with('category');
+
+        //絞り込み
         $filter = $request->filter;
-        $query = auth()->user()->todos()->with('category')->orderBy('end_date', 'asc');
         if ($filter == 'active') {
             $query->whereNull('completed_at');
         } elseif ($filter == 'done') {
@@ -21,13 +23,44 @@ class TodoController extends Controller
             $title = $request->q;
             $query = $query->where('title', 'like', '%' . $title . '%');
         }
-
+        //並び替え
+        switch ($request->sort) {
+            case 'end_date_asc':
+                $query->orderBy('end_date', 'asc');
+                break;
+            case 'end_date_desc':
+                $query->orderBy('end_date', 'desc');
+                break;
+            case 'created_at_desc':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'priority_asc':
+                $query->orderBy('priority', 'asc');
+                break;
+            case 'title_asc':
+                $query->orderBy('title', 'asc');
+                break;
+            default:
+                $query->orderBy('end_date', 'asc');
+                break;
+        }
         $items = $query->paginate(5);
+
         $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
+
+        //すべて・完了済・未完了の件数
+        $counts = auth()->user()->todos()->selectRaw(
+            'COUNT(*) as total,
+            COUNT(CASE WHEN completed_at IS NULL THEN 1 END) as active,
+            COUNT(CASE WHEN completed_at IS NOT NULL THEN 1 END) as done'
+        )->first();
+
         $data = [
             'items' => $items,
             'filter' => $filter,
-            'categories' => $categories
+            'categories' => $categories,
+            'sort' => $request->sort,
+            'counts' => $counts
         ];
         return view('todos.index', $data);
     }
@@ -41,6 +74,7 @@ class TodoController extends Controller
         $todo->start_date = $request->start_date;
         $todo->end_date = $request->end_date;
         $todo->category_id = $request->category_id;
+        $todo->priority = $request->priority;
         $todo->save();
         return redirect()->route('todos.index');
     }
@@ -61,6 +95,7 @@ class TodoController extends Controller
         $todo->start_date = $request->start_date;
         $todo->end_date = $request->end_date;
         $todo->category_id = $request->category_id;
+        $todo->priority = $request->priority;
         $todo->save();
         return redirect()->route('todos.index');
     }
