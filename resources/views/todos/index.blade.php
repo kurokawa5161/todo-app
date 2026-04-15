@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>ToDo一覧</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -75,18 +76,19 @@
                     };
                 @endphp
 
-                <li class="p-3 border rounded hover:bg-gray-50">
+                <li class="p-3 border rounded hover:bg-gray-50" data-todo-item>
                     {{-- 親タスクの情報（タイトル、バッジ、ボタンなど） --}}
                     <div class="flex items-center gap-2">
                         @if ($item->completed_at)
-                            <span>✅</span>
-                            <s class="flex-1 text-gray-400">{{ $item->title }}</s>
+                            <span data-checkbox>✅</span>
+                            <s class="flex-1 text-gray-400" data-title>{{ $item->title }}</s>
                         @else
-                            <span>⬜</span>
-                            <span class="flex-1">{{ $item->title }}</span>
+                            <span data-checkbox>⬜</span>
+                            <span class="flex-1" data-title>{{ $item->title }}</span>
                         @endif
                         @if ($item->image_path)
-                            <img src="{{ asset('storage/' . $item->image_path) }}" class="w-20 h-20 object-cover rounded">
+                            <img src="{{ asset('storage/' . $item->image_path) }}"
+                                class="w-20 h-20 object-cover rounded">
                         @endif
 
                         @if ($item->category)
@@ -110,13 +112,10 @@
                             </span>
                         @endif
 
-                        <form action="{{ route('todos.pin', $item->id) }}" method="POST" class="inline">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="text-lg hover:scale-110 transition">
-                                {{ $item->is_pinned ? '⭐' : '☆' }}
-                            </button>
-                        </form>
+                        <button type="button" data-pin-url="{{ route('todos.pin', $item->id) }}"
+                            class="text-lg hover:scale-110 transition">
+                            {{ $item->is_pinned ? '⭐' : '☆' }}
+                        </button>
 
                         @php
                             $isOverdue = !$item->completed_at && $item->end_date->isPast();
@@ -143,13 +142,10 @@
                             </button>
                         </form>
 
-                        <form action="{{ route('todos.toggle', $item->id) }}" method="POST" class="inline">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                                {{ $item->completed_at ? '戻す' : '完了' }}
-                            </button>
-                        </form>
+                        <button type="button" data-toggle-url="{{ route('todos.toggle', $item->id) }}"
+                            class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            <span>{{ $item->completed_at ? '戻す' : '完了' }}</span>
+                        </button>
 
                         <form action="{{ route('todos.destroy', $item->id) }}" method="POST" class="inline">
                             @csrf

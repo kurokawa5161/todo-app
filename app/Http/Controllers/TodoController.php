@@ -119,10 +119,19 @@ class TodoController extends Controller
         return redirect()->route('todos.index');
     }
 
-    public function toggle(Todo $todo)
+    public function toggle(Request $request, Todo $todo)
     {
         $todo->completed_at = $todo->completed_at ? NULL : now();
         $todo->save();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'completed' => $todo->completed_at !== null,
+                'completed_at' => $todo->completed_at?->format('Y-m-d H:i:s')
+            ]);
+        }
+
         return redirect()->route('todos.index');
     }
 
@@ -137,7 +146,7 @@ class TodoController extends Controller
         return redirect()->route('todos.index');
     }
 
-    public function togglePin(Todo $todo)
+    public function togglePin(Request $request, Todo $todo)
     {
         if ($todo->is_pinned) {
             $todo->is_pinned = FALSE;
@@ -145,6 +154,13 @@ class TodoController extends Controller
             $todo->is_pinned = TRUE;
         }
         $todo->save();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_pinned' => $todo->is_pinned,
+            ]);
+        }
         return redirect()->route('todos.index');
     }
 }
