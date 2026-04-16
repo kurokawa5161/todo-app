@@ -85,6 +85,17 @@ class TodoController extends Controller
         }
 
         $todo->save();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'todo' => [
+                    'id' => $todo->id,
+                    'title' => $todo->title,
+                    'completed' => $todo->completed_at !== null
+                ]
+            ]);
+        }
         return redirect()->route('todos.index');
     }
 

@@ -157,7 +157,7 @@
                     </div>
                     {{-- サブタスク --}}
                     @if ($item->children->count() > 0)
-                        <ul class="ml-8 mt-2 space-y-1">
+                        <ul class="ml-8 mt-2 space-y-1" data-subtask-list>
                             @foreach ($item->children as $child)
                                 <li class="flex items-center gap-2 p-2 border rounded bg-gray-50">
                                     @if ($child->completed_at)
@@ -190,7 +190,8 @@
                         </ul>
                     @endif
                     {{-- サブタスク追加フォーム --}}
-                    <form action="{{ route('todos.store') }}" method="POST" class="ml-8 mt-2 flex gap-2">
+                    <form action="{{ route('todos.store') }}" method="POST" class="ml-8 mt-2 flex gap-2"
+                        data-subtask-form data-parent-id="{{ $item->id }}">
                         @csrf
                         <input type="hidden" name="parent_id" value="{{ $item->id }}">
                         <input type="text" name="title" placeholder="サブタスク追加"
