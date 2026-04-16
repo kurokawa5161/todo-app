@@ -66,4 +66,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Tag::class);
     }
+
+    public function savedSearches()
+    {
+        return $this->hasMany(savedSearch::class);
+    }
 }

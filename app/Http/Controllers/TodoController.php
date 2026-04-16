@@ -55,6 +55,9 @@ class TodoController extends Controller
         //タグ
         $tags = auth()->user()->tags()->orderBy('created_at', 'asc')->get();
 
+        //検索条件
+        $savedSearches = auth()->user()->savedSearches()->orderBy('created_at', 'asc')->get();
+
         //すべて・完了済・未完了の件数
         $counts = auth()->user()->todos()->selectRaw(
             'COUNT(*) as total,
@@ -68,7 +71,8 @@ class TodoController extends Controller
             'categories' => $categories,
             'sort' => $request->sort,
             'counts' => $counts,
-            'tags' => $tags
+            'tags' => $tags,
+            'savedSearches' => $savedSearches
         ];
         return view('todos.index', $data);
     }

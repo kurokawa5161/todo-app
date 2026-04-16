@@ -26,6 +26,32 @@
             </form>
         </nav>
 
+        {{-- 保存済み検索条件 --}}
+        @if ($savedSearches->count() > 0)
+            <div class="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                <h3 class="text-sm font-bold text-blue-700 mb-2">📌 保存済み検索</h3>
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($savedSearches as $savedSearch)
+                        <div class="flex items-center gap-1 bg-white px-3 py-1 rounded border border-blue-300">
+                            <a href="{{ route('saved-searches.apply', $savedSearch) }}"
+                                class="text-blue-600 hover:underline text-sm">
+                                {{ $savedSearch->name }}
+                            </a>
+                            <form action="{{ route('saved-searches.destroy', $savedSearch) }}" method="POST"
+                                class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-red-500 hover:text-red-700 text-xs ml-1"
+                                    onclick="return confirm('削除しますか？')">
+                                    ✕
+                                </button>
+                            </form>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <div class="flex gap-2 mb-4">
             <a href="{{ route('todos.index', array_merge(request()->query(), ['filter' => null])) }}"
                 class="px-3 py-1 rounded {{ !$filter ? 'bg-blue-600 text-white' : 'bg-gray-200' }}">
@@ -104,6 +130,28 @@
                 </div>
             </div>
         </form>
+
+        {{-- 検索条件を保存 --}}
+        @if (request()->hasAny(['q', 'category_id', 'priority', 'date_from', 'date_to', 'filter', 'sort']))
+            <form action="{{ route('saved-searches.store') }}" method="POST" class="mb-4 flex gap-2 items-end">
+                @csrf
+                @foreach (request()->query() as $key => $value)
+                    @if ($value !== null && $value !== '')
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endif
+                @endforeach
+
+                <div class="flex-1">
+                    <label class="block text-xs font-medium mb-1">検索条件に名前を付けて保存</label>
+                    <input type="text" name="name" placeholder="例: 高優先度・未完了"
+                        class="w-full px-3 py-2 border rounded text-sm" required>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    💾 保存
+                </button>
+            </form>
+        @endif
+
 
         {{-- タスク一覧 --}}
         <ul class="space-y-2 mb-6">
@@ -275,7 +323,6 @@
         <div class="my-6">
             {{ $items->links() }}
         </div>
-
 
         {{-- エラー表示 --}}
         @if ($errors->any())

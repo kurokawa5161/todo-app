@@ -5,6 +5,7 @@ use App\Http\Controllers\TodoController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\SavedSearchController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -47,4 +48,10 @@ Route::prefix('tags')->name('tags.')->middleware('auth')->group(function () {
     Route::get('/', [TagController::class, 'index'])->name('index');
     Route::post('/', [TagController::class, 'store'])->name('store');
     Route::delete('/{tag}', [TagController::class, 'destroy'])->name('destroy');
+});
+
+Route::prefix('saved-searches')->name('saved-searches.')->middleware('auth')->group(function () {
+    Route::post('/', [SavedSearchController::class, 'store'])->name('store');
+    Route::get('/{savedSearch}/apply', [SavedSearchController::class, 'apply'])->name('apply');
+    Route::delete('/{savedSearch}', [SavedSearchController::class, 'destroy'])->name('destroy');
 });
