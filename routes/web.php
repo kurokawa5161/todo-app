@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\TagController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -31,7 +32,7 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__ . '/auth.php';
 
-Route::prefix('category')->name('category.')->middleware('auth')->group(function () {
+Route::prefix('categories')->name('categories.')->middleware('auth')->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->name('index');
     Route::post('/', [CategoryController::class, 'store'])->name('store');
     Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
@@ -40,4 +41,10 @@ Route::prefix('category')->name('category.')->middleware('auth')->group(function
 Route::name('comments.')->middleware('auth')->group(function () {
     Route::post('/todos/{todo}/comments', [CommentController::class, 'store'])->name('store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('destroy');
+});
+
+Route::prefix('tags')->name('tags.')->middleware('auth')->group(function () {
+    Route::get('/', [TagController::class, 'index'])->name('index');
+    Route::post('/', [TagController::class, 'store'])->name('store');
+    Route::delete('/{tag}', [TagController::class, 'destroy'])->name('destroy');
 });

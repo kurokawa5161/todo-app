@@ -6,26 +6,27 @@ use Illuminate\Http\Request;
 use App\Http\Requests\TodoRequest;
 use App\Models\Todo;
 use App\Models\Comment;
+use App\Models\TodoTag;
 use Illuminate\Support\Facades\Storage;
 
 class TodoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = auth()->user()->todos()->whereNull('parent_id')->with(['category', 'children']);
+        $query = auth()->user()->todos()->whereNull('parent_id')->with(['category', 'children', 'tags']);
 
-        //絞り込み
-        $filter = $request->filter;
-        if ($filter == 'active') {
-            $query->whereNull('completed_at');
-        } elseif ($filter == 'done') {
-            $query->whereNotNull('completed_at');
-        }
-        if ($request->q) {
-            $title = $request->q;
-            $query = $query->where('title', 'like', '%' . $title . '%');
-        }
-        //並び替え
+        // ========================================
+        // 絞り込み条件
+        // ========================================
+        $query->completedFilter($request->filter)
+            ->search($request->q)
+            ->category($request->category_id)
+            ->priority($request->priority)
+            ->dateRange($request->date_from, $request->date_to);
+
+        // ========================================
+        // 並び替え
+        // ========================================
         $query->orderBy('is_pinned', 'desc');
         switch ($request->sort) {
             case 'end_date_asc':
@@ -48,8 +49,11 @@ class TodoController extends Controller
                 break;
         }
         $items = $query->paginate(5);
-
+        //カテゴリ
         $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
+
+        //タグ
+        $tags = auth()->user()->tags()->orderBy('created_at', 'asc')->get();
 
         //すべて・完了済・未完了の件数
         $counts = auth()->user()->todos()->selectRaw(
@@ -60,16 +64,18 @@ class TodoController extends Controller
 
         $data = [
             'items' => $items,
-            'filter' => $filter,
+            'filter' => $request->filter,
             'categories' => $categories,
             'sort' => $request->sort,
-            'counts' => $counts
+            'counts' => $counts,
+            'tags' => $tags
         ];
         return view('todos.index', $data);
     }
 
     public function store(TodoRequest $request)
     {
+        //todoテーブル
         $todo = new Todo();
         $todo->user_id = auth()->id();
         $todo->title = $request->title;
@@ -83,8 +89,12 @@ class TodoController extends Controller
             $path = $request->file('image')->store('todos', 'public');
             $todo->image_path = $path;
         }
-
         $todo->save();
+
+        //中間テーブル
+        if ($request->has('tags')) {
+            $todo->tags()->attach($request->tags);
+        }
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -103,9 +113,12 @@ class TodoController extends Controller
     {
         $todo->load('comments.user');
         $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
+        $tags = auth()->user()->tags()->orderBy('name', 'asc')->get();
+
         $data = [
             'item' => $todo,
             'categories' => $categories,
+            'tags' => $tags
         ];
         return view('todos.edit', $data);
     }
@@ -125,6 +138,9 @@ class TodoController extends Controller
             $path = $request->file('image')->store('todos', 'public');
             $todo->image_path = $path;
         }
+        //中間テーブル
+        $todo->tags()->sync($request->tags ?? []);
+
         $todo->save();
 
         return redirect()->route('todos.index');

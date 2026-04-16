@@ -24,12 +24,12 @@ class CategoryController extends Controller
         $category->user_id = auth()->id();
         $category->color = $request->color;
         $category->save();
-        return redirect()->route('category.index');
+        return redirect()->route('categories.index');
     }
 
     public function destroy(Category $category)
     {
         $category->delete();
-        return redirect()->route('category.index');
+        return redirect()->route('categories.index');
     }
 }

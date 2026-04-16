@@ -28,7 +28,7 @@
             @foreach ($categories as $category)
                 <li class="flex items-center gap-2 p-3 border rounded hover:bg-gray-50">
                     <span class="flex-1">{{ $category->name }}</span>
-                    <form action="{{ route('category.destroy', $category->id) }}" method="POST" class="inline">
+                    <form action="{{ route('categories.destroy', $category->id) }}" method="POST" class="inline">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
@@ -51,7 +51,7 @@
         @endif
 
         {{-- 追加フォーム --}}
-        <form action="{{ route('category.store') }}" method="post" class="space-y-3 border-t pt-4">
+        <form action="{{ route('categories.store') }}" method="post" class="space-y-3 border-t pt-4">
             @csrf
             <div>
                 <label class="block text-sm font-medium mb-1">カテゴリー名</label>

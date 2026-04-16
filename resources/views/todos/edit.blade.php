@@ -91,6 +91,46 @@
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
             </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">タグ</label>
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($tags as $tag)
+                        @php
+                            $colorClass = match ($tag->color) {
+                                'red' => 'bg-red-100 text-red-700',
+                                'yellow' => 'bg-yellow-100 text-yellow-700',
+                                'green' => 'bg-green-100 text-green-700',
+                                'blue' => 'bg-blue-100 text-blue-700',
+                                'purple' => 'bg-purple-100 text-purple-700',
+                                'pink' => 'bg-pink-100 text-pink-700',
+                                'gray' => 'bg-gray-100 text-gray-700',
+                                default => 'bg-gray-100 text-gray-700',
+                            };
+
+                            // このTodoに付いているタグかチェック
+                            $isChecked = $item->tags->contains($tag->id);
+                        @endphp
+
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" name="tags[]" value="{{ $tag->id }}"
+                                {{ $isChecked ? 'checked' : '' }} class="rounded">
+                            <span class="px-2 py-1 rounded text-xs {{ $colorClass }}">
+                                {{ $tag->name }}
+                            </span>
+                        </label>
+                    @endforeach
+
+                    @if ($tags->count() == 0)
+                        <p class="text-sm text-gray-500">
+                            タグがありません。
+                            <a href="{{ route('tags.index') }}" class="text-blue-600 hover:underline">
+                                タグ管理
+                            </a>
+                            から作成してください。
+                        </p>
+                    @endif
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">
                 編集
             </button>

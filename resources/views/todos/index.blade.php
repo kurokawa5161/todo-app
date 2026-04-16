@@ -10,12 +10,12 @@
 
 <body class="bg-gray-100 min-h-screen p-8">
 
-    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
-
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
+        期間
         <h1 class="text-3xl font-bold text-blue-600 mb-6">ToDo一覧</h1>
 
         <nav class="mb-4 flex items-center justify-between">
-            <a href="{{ route('category.index') }}" class="text-blue-600 hover:underline">
+            <a href="{{ route('categories.index') }}" class="text-blue-600 hover:underline">
                 → カテゴリ管理へ
             </a>
             <form method="POST" action="{{ route('logout') }}">
@@ -40,25 +40,70 @@
                 完了済({{ $counts->done }})
             </a>
         </div>
-        <form action="{{ route('todos.index') }}" method="GET" class="mb-4 flex gap-2">
+        <form action="{{ route('todos.index') }}" method="GET" class="mb-4 space-y-3">
             <input type="hidden" name="filter" value="{{ $filter }}">
 
-            {{-- 検索欄 --}}
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="🔍 タイトルで検索"
-                class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400">
+            {{-- 検索欄（タイトル・内容） --}}
+            <div class="flex gap-2">
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="🔍 タイトルや内容で検索"
+                    class="flex-1 px-3 py-2 border rounded">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">
+                    検索
+                </button>
+            </div>
 
-            {{-- 並び替え --}}
-            <select name="sort" onchange="this.form.submit()"
-                class="w-48 px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <option value="">並び替え</option>
-                <option value="end_date_asc" {{ $sort == 'end_date_asc' ? 'selected' : '' }}>締切が近い順</option>
-                <option value="end_date_desc" {{ $sort == 'end_date_desc' ? 'selected' : '' }}>締切が遠い順</option>
-                <option value="created_at_desc" {{ $sort == 'created_at_desc' ? 'selected' : '' }}>作成日 新しい順</option>
-                <option value="priority_asc" {{ $sort == 'priority_asc' ? 'selected' : '' }}>優先度 高→低</option>
-                <option value="title_asc" {{ $sort == 'title_asc' ? 'selected' : '' }}>タイトル昇順</option>
-            </select>
+            {{-- フィルター行 --}}
+            <div class="flex gap-2 items-center flex-wrap">
+                {{-- カテゴリ選択 --}}
+                <select name="category_id" class="px-3 py-2 border rounded bg-white">
+                    <option value="">カテゴリ: すべて</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}"
+                            {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+
+                {{-- 優先度選択 --}}
+                <select name="priority" class="px-3 py-2 border rounded bg-white">
+                    <option value="">優先度: すべて</option>
+                    <option value="1" {{ request('priority') == '1' ? 'selected' : '' }}>🔴 高</option>
+                    <option value="2" {{ request('priority') == '2' ? 'selected' : '' }}>🟡 中</option>
+                    <option value="3" {{ request('priority') == '3' ? 'selected' : '' }}>🟢 低</option>
+                </select>
+
+                {{-- 並び替え --}}
+                <select name="sort" class="px-3 py-2 border rounded bg-white">
+                    <option value="">並び替え</option>
+                    <option value="end_date_asc" {{ request('sort') == 'end_date_asc' ? 'selected' : '' }}>
+                        締切が近い順
+                    </option>
+                    <option value="end_date_desc" {{ request('sort') == 'end_date_desc' ? 'selected' : '' }}>
+                        締切が遠い順
+                    </option>
+                    <option value="created_at_desc" {{ request('sort') == 'created_at_desc' ? 'selected' : '' }}>
+                        作成日 新しい順
+                    </option>
+                    <option value="priority_asc" {{ request('sort') == 'priority_asc' ? 'selected' : '' }}>
+                        優先度 高→低
+                    </option>
+                    <option value="title_asc" {{ request('sort') == 'title_asc' ? 'selected' : '' }}>
+                        タイトル昇順
+                    </option>
+                </select>
+
+                {{-- 期間指定 --}}
+                <div>
+                    <label class="text-sm font-medium">期間:</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}"
+                        class="px-3 py-2 border rounded">
+                    <span>〜</span>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}"
+                        class="px-3 py-2 border rounded">
+                </div>
+            </div>
         </form>
-
 
         {{-- タスク一覧 --}}
         <ul class="space-y-2 mb-6">
@@ -110,6 +155,29 @@
                             <span class="text-xs px-2 py-1 rounded {{ $priorityBadge[1] }}">
                                 {{ $priorityBadge[0] }}
                             </span>
+                        @endif
+
+                        {{-- タグ表示 --}}
+                        @if ($item->tags->count() > 0)
+                            <div class="flex flex-wrap gap-1">
+                                @foreach ($item->tags as $tag)
+                                    @php
+                                        $tagColorClass = match ($tag->color) {
+                                            'red' => 'bg-red-100 text-red-700',
+                                            'yellow' => 'bg-yellow-100 text-yellow-700',
+                                            'green' => 'bg-green-100 text-green-700',
+                                            'blue' => 'bg-blue-100 text-blue-700',
+                                            'purple' => 'bg-purple-100 text-purple-700',
+                                            'pink' => 'bg-pink-100 text-pink-700',
+                                            'gray' => 'bg-gray-100 text-gray-700',
+                                            default => 'bg-gray-100 text-gray-700',
+                                        };
+                                    @endphp
+                                    <span class="text-xs px-2 py-0.5 rounded {{ $tagColorClass }}">
+                                        🏷️ {{ $tag->name }}
+                                    </span>
+                                @endforeach
+                            </div>
                         @endif
 
                         <button type="button" data-pin-url="{{ route('todos.pin', $item->id) }}"
@@ -204,7 +272,10 @@
                 </li>
             @endforeach
         </ul>
-        {{ $items->links() }}
+        <div class="my-6">
+            {{ $items->links() }}
+        </div>
+
 
         {{-- エラー表示 --}}
         @if ($errors->any())
@@ -272,6 +343,43 @@
                 </div>
             </div>
             <input type="file" name="image" accept="image/*">
+            <div>
+                <label class="block text-sm font-medium mb-1">タグ</label>
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($tags as $tag)
+                        @php
+                            $colorClass = match ($tag->color) {
+                                'red' => 'bg-red-100 text-red-700',
+                                'yellow' => 'bg-yellow-100 text-yellow-700',
+                                'green' => 'bg-green-100 text-green-700',
+                                'blue' => 'bg-blue-100 text-blue-700',
+                                'purple' => 'bg-purple-100 text-purple-700',
+                                'pink' => 'bg-pink-100 text-pink-700',
+                                'gray' => 'bg-gray-100 text-gray-700',
+                                default => 'bg-gray-100 text-gray-700',
+                            };
+                        @endphp
+
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" name="tags[]" value="{{ $tag->id }}" class="rounded">
+                            <span class="px-2 py-1 rounded text-xs {{ $colorClass }}">
+                                {{ $tag->name }}
+                            </span>
+                        </label>
+                    @endforeach
+
+                    @if ($tags->count() == 0)
+                        <p class="text-sm text-gray-500">
+                            タグがありません。
+                            <a href="{{ route('tags.index') }}" class="text-blue-600 hover:underline">
+                                タグ管理
+                            </a>
+                            から作成してください。
+                        </p>
+                    @endif
+                </div>
+            </div>
+
             <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">
                 追加
             </button>
