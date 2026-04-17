@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SavedSearch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class SavedSearchController extends Controller
 {
@@ -32,6 +33,9 @@ class SavedSearchController extends Controller
         $savedSearch->conditions = $conditions;
         $savedSearch->save();
 
+        //キャッシュ削除
+        Cache::forget('user_' . auth()->id() . '_saved_searches');
+
         return redirect()->route('todos.index');
     }
 
@@ -51,6 +55,10 @@ class SavedSearchController extends Controller
             abort(403);
         }
         $savedSearch->delete();
+
+        //キャッシュ削除
+        Cache::forget('user_' . auth()->id() . '_saved_searches');
+
         return redirect()->route('todos.index');
     }
 }

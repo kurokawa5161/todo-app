@@ -13,8 +13,8 @@ Laravel実務スキル習得のための段階的学習プラン
 フェーズ3      ✅ 完了
 フェーズ4      ✅ 完了
 フェーズ5      ✅ 完了
-フェーズ6      ✅ パートA, B完了
-フェーズ7      ⬜ 未着手
+フェーズ6      ✅ 完了
+フェーズ7      ✅ 完了
 フェーズ8      ⬜ 未着手
 フェーズ9      ⬜ 未着手
 フェーズ10     ⬜ 未着手
@@ -156,8 +156,10 @@ Laravel実務スキル習得のための段階的学習プラン
 
 ---
 
-### フェーズ6：通知・バッチ処理（パートA, B）
-**コミット**: `1e692de feat: フェーズ6-A,B完了（期限通知・スケジューラー）`
+### フェーズ6：通知・バッチ処理
+**コミット**: 
+- `1e692de feat: フェーズ6-A,B完了（期限通知・スケジューラー）`
+- `(最新) feat: フェーズ6-C完了（リマインダー設定機能）`
 
 **実装内容**:
 - ✅ 期限切れメール通知（パートA）
@@ -167,10 +169,14 @@ Laravel実務スキル習得のための段階的学習プラン
   - MAIL_MAILER=log で開発環境テスト
 - ✅ 毎日の期限チェック（パートB）
   - SendDeadlineNotifications コマンド作成
-  - 明日が締切のTodoを自動検出
-  - ユーザーごとに通知を送信
   - Task Scheduler 設定（毎朝9時自動実行）
   - ログ記録機能
+- ✅ リマインダー設定（パートC）
+  - マイグレーション作成（reminder_days_before カラム追加）
+  - プロフィール画面に設定フォーム追加
+  - 通知タイミングを選択可能（1日前/2日前/3日前/7日前/通知なし）
+  - SendDeadlineNotifications コマンド修正（ユーザーごとの設定に対応）
+  - 専用コントローラーメソッド作成（updateReminder）
 
 **学んだ技術**:
 - Laravel Notification（通知システム）
@@ -178,100 +184,54 @@ Laravel実務スキル習得のための段階的学習プラン
 - Job（ジョブ）
 - Artisan Command（カスタムコマンド作成）
 - Task Scheduler（スケジューラー）
-- Carbon（日付操作）
+- Carbon（日付操作、動的な日付計算）
 - whereDate, whereNull（クエリメソッド）
-- groupBy（コレクションメソッド）
+- マイグレーション（カラム追加）
+- Mass Assignment Protection（$fillable）
+- カスタムコントローラーメソッド
+- ユーザーリレーション（$user->todos()）
+- Blade コンポーネント（セレクトボックス）
+
+---
+
+### フェーズ7：パフォーマンス最適化
+**コミット**: `(最新) feat: フェーズ7完了（パフォーマンス最適化）`
+
+**実装内容**:
+- ✅ N+1問題の解決（パートA）
+  - Laravel Debugbar で現状確認（クエリ10回、5.55ms）
+  - Eager Loading 実装済み（`with(['category', 'children', 'tags'])`）
+  - クエリ数・実行時間の可視化
+- ✅ キャッシング（パートB）
+  - カテゴリ一覧をキャッシュ（1時間）
+  - タグ一覧をキャッシュ（1時間）
+  - 保存済み検索をキャッシュ（1時間）
+  - データ変更時に自動キャッシュ削除（CategoryController, TagController, SavedSearchController）
+  - キャッシュドライバーを file に設定
+  - クエリ削減：10回 → 7回（30%削減）
+- ✅ データベース最適化（パートC）
+  - 単一カラムインデックス追加（completed_at, end_date, is_pinned）
+  - 複合インデックス追加（[user_id, parent_id], [is_pinned, end_date]）
+  - マイグレーション作成（add_index_to_todos_table）
+  - 実行時間短縮：3.39ms → 2.94ms（さらに13%高速化）
+
+**学んだ技術**:
+- Eager Loading（with()メソッド、N+1問題解決）
+- Laravel Debugbar（クエリ数・実行時間の可視化）
+- Cache Facade（remember, forget）
+- キャッシュドライバー（database, file）
+- キャッシュ無効化（データ変更時）
+- データベースインデックス（単一・複合）
+- マイグレーション（インデックス追加・削除）
+- パフォーマンス測定・分析
+
+**パフォーマンス改善成果**:
+- クエリ数：10回 → 7回（30%削減）
+- 実行時間：5.55ms → 2.94ms（47%高速化）
 
 ---
 
 ## 🎯 今後の学習フェーズ
-
-### フェーズ6：通知・バッチ処理【実務必須】
-**目標**: 非同期処理とメール通知をマスター
-
-**学べる技術**:
-- Laravel Mail
-- Queue（キュー）
-- Job（ジョブ）
-- Notification（通知）
-- Task Scheduler（スケジューラー）
-- Redis/Database Queue
-
-**実装する機能**:
-
-#### 機能⑫-A: 期限切れメール通知
-- [ ] Notification クラス作成
-- [ ] メールテンプレート作成（Markdown）
-- [ ] 期限1日前に通知
-- [ ] Queue で非同期送信
-
-#### 機能⑫-B: 毎日の期限チェック
-- [ ] Artisan コマンド作成
-- [ ] Task Scheduler 設定
-- [ ] 毎朝9時に自動実行
-- [ ] ログ記録
-
-#### 機能⑫-C: リマインダー設定
-- [ ] ユーザーが通知タイミングを設定
-- [ ] カスタマイズ可能な通知
-
-**実装ステップ**:
-```
-1. php artisan make:notification TodoDeadlineNotification
-2. メールテンプレート作成
-3. Queue ドライバー設定（database/redis）
-4. php artisan make:job SendDeadlineNotifications
-5. Scheduler 登録（app/Console/Kernel.php）
-6. php artisan queue:work でワーカー起動
-```
-
-**実務での重要性**: ⭐⭐⭐⭐⭐
-バックグラウンド処理は実務で頻繁に使う。
-
----
-
-### フェーズ7：パフォーマンス最適化【実務重要】
-**目標**: 大量データでも高速に動作するアプリに
-
-**学べる技術**:
-- Eager Loading（N+1問題解決）
-- キャッシング（Redis/Memcached）
-- データベースインデックス
-- クエリ最適化
-- Laravel Debugbar
-
-**実装する機能**:
-
-#### 機能⑬-A: N+1問題の解決
-- [ ] Laravel Debugbar 導入
-- [ ] クエリ数の可視化
-- [ ] with() で Eager Loading
-- [ ] 実行時間の計測
-
-#### 機能⑬-B: キャッシング
-- [ ] カテゴリ一覧をキャッシュ
-- [ ] ユーザーのTodoカウントをキャッシュ
-- [ ] キャッシュ無効化のタイミング設定
-
-#### 機能⑬-C: データベース最適化
-- [ ] インデックス追加（user_id, category_id など）
-- [ ] クエリの EXPLAIN 分析
-- [ ] ペジネーション改善
-
-**実装ステップ**:
-```
-1. composer require barryvdh/laravel-debugbar
-2. クエリ数・実行時間を確認
-3. with(['category', 'user']) で Eager Loading
-4. Redis 設定（config/cache.php）
-5. Cache::remember() で頻繁なクエリをキャッシュ
-6. マイグレーションでインデックス追加
-```
-
-**実務での重要性**: ⭐⭐⭐⭐⭐
-本番環境では必須。パフォーマンス問題は必ず発生する。
-
----
 
 ### フェーズ8：セキュリティ・認可【実務必須】
 **目標**: セキュアなアプリケーション開発
@@ -500,4 +460,4 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ---
 
 **最終更新**: 2026-04-17
-**現在のフェーズ**: フェーズ6 パートA, B完了 → パートCまたはフェーズ7へ
+**現在のフェーズ**: フェーズ7 完了 → フェーズ8へ

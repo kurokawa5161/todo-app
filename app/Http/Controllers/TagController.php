@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class TagController extends Controller
 {
@@ -40,6 +41,9 @@ class TagController extends Controller
         $tag->user_id = auth()->id();
         $tag->save();
 
+        //キャッシュ削除
+        Cache::forget('user_' . auth()->id() . '_tags');
+
         return redirect()->route('tags.index');
     }
 
@@ -52,6 +56,10 @@ class TagController extends Controller
             abort(403);
         }
         $tag->delete();
+
+        //キャッシュ削除
+        Cache::forget('user_' . auth()->id() . '_tags');
+
         return redirect()->route('tags.index');
     }
 }

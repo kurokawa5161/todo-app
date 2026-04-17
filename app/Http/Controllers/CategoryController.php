@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\CategoryRequest;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
@@ -24,12 +25,20 @@ class CategoryController extends Controller
         $category->user_id = auth()->id();
         $category->color = $request->color;
         $category->save();
+
+        //キャッシュ削除
+        Cache::forget('user_' . auth()->id() . '_categories');
+
         return redirect()->route('categories.index');
     }
 
     public function destroy(Category $category)
     {
         $category->delete();
+
+        //キャッシュ削除
+        Cache::forget('user_' . auth()->id() . '_categories');
+
         return redirect()->route('categories.index');
     }
 }

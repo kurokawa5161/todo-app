@@ -8,6 +8,7 @@ use App\Models\Todo;
 use App\Models\Comment;
 use App\Models\TodoTag;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class TodoController extends Controller
 {
@@ -49,14 +50,21 @@ class TodoController extends Controller
                 break;
         }
         $items = $query->paginate(5);
+
         //カテゴリ
-        $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
+        $categories = Cache::remember('user_' . auth()->id() . '_categories', 3600, function () {
+            return auth()->user()->categories()->orderBy('created_at', 'asc')->get();
+        });
 
         //タグ
-        $tags = auth()->user()->tags()->orderBy('created_at', 'asc')->get();
+        $tags = Cache::remember('user_' . auth()->id() . '_tags', 3600, function () {
+            return auth()->user()->tags()->orderBy('created_at', 'asc')->get();
+        });
 
         //検索条件
-        $savedSearches = auth()->user()->savedSearches()->orderBy('created_at', 'asc')->get();
+        $savedSearches = Cache::remember('user_' . auth()->id() . '_saved_searches', 3600, function () {
+            return auth()->user()->savedSearches()->orderBy('created_at', 'asc')->get();
+        });
 
         //すべて・完了済・未完了の件数
         $counts = auth()->user()->todos()->selectRaw(
