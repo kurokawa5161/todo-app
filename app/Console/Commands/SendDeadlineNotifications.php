@@ -31,28 +31,24 @@ class SendDeadlineNotifications extends Command
      */
     public function handle()
     {
-        $tomorrow = Carbon::tomorrow();
+        $users = User::whereNotNull('reminder_days_before')->get();
 
-        $todos = Todo::whereDate('end_date', $tomorrow)
-            ->whereNull('completed_at')
-            ->get();
+        foreach ($users as $user) {
+            //今日から何日後の日付
+            $reminderDay = Carbon::today()->addDays($user->reminder_days_before);
 
-        foreach ($todos as $todo) {
-            Log::info("Todo ID: {$todo->id}, タイトル: {$todo->title}, 締切: {$todo->end_date}, completed_at: " . ($todo->completed_at ?? 'null'));
-        }
+            $todos = $user->todos()->whereDate('end_date', $reminderDay)
+                ->whereNull('completed_at')
+                ->get();
 
-        $todosByUser = $todos->groupBy('user_id');
-
-        foreach ($todosByUser as $user_id => $userTodos) {
-            $user = User::find($user_id);
-
-            foreach ($userTodos as $key => $todo) {
+            foreach ($todos as $todo) {
                 //通知をおくる
                 $user->notify(new TodoDeadlineNotification($todo));
             }
-
             //ログに記録
-            Log::info("通知送信： ユーザーID{$user_id}に{$userTodos->count()}件");
+            if ($todos->count() > 0) {
+                Log::info("通知送信： ユーザーID{$user->id}に{$todos->count()}件");
+            }
         }
     }
 }

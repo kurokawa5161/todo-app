@@ -37,6 +37,15 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
+    public function updateReminder(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reminder_days_before' => 'integer|nullable|in:1,2,3,7'
+        ]);
+        $request->user()->update($validated);
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
     /**
      * Delete the user's account.
      */
