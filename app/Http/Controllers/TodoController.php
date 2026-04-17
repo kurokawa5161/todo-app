@@ -9,6 +9,7 @@ use App\Models\Comment;
 use App\Models\TodoTag;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use App\Policies\TodoPolicy;
 
 class TodoController extends Controller
 {
@@ -123,6 +124,9 @@ class TodoController extends Controller
 
     public function edit(Todo $todo)
     {
+        //権限チェック
+        $this->authorize('update', $todo);
+
         $todo->load('comments.user');
         $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
         $tags = auth()->user()->tags()->orderBy('name', 'asc')->get();
@@ -137,6 +141,9 @@ class TodoController extends Controller
 
     public function update(TodoRequest $request, Todo $todo)
     {
+        //権限チェック
+        $this->authorize('update', $todo);
+
         $todo->title = $request->title;
         $todo->content = $request->content;
         $todo->start_date = $request->start_date;
@@ -160,6 +167,9 @@ class TodoController extends Controller
 
     public function toggle(Request $request, Todo $todo)
     {
+        //権限チェック
+        $this->authorize('update', $todo);
+
         $todo->completed_at = $todo->completed_at ? NULL : now();
         $todo->save();
 
@@ -177,6 +187,9 @@ class TodoController extends Controller
 
     public function destroy(Todo $todo)
     {
+        //権限チェック
+        $this->authorize('delete', $todo);
+
         //画像削除
         if ($todo->image_path) {
             Storage::disk('public')->delete($todo->image_path);
@@ -187,6 +200,9 @@ class TodoController extends Controller
 
     public function togglePin(Request $request, Todo $todo)
     {
+        //権限チェック
+        $this->authorize('update', $todo);
+
         if ($todo->is_pinned) {
             $todo->is_pinned = FALSE;
         } else {

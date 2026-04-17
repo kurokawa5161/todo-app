@@ -42,18 +42,18 @@ class SavedSearchController extends Controller
     //保存済み検索を適用
     public function apply(SavedSearch $savedSearch)
     {
-        if ($savedSearch->user_id !== auth()->id()) {
-            abort(403);
-        }
+        //権限チェック
+        $this->authorize('view', $savedSearch);
+
         return redirect()->route('todos.index', $savedSearch->conditions);
     }
 
     //保存済み検索を削除
     public function destroy(SavedSearch $savedSearch)
     {
-        if ($savedSearch->user_id !== auth()->id()) {
-            abort(403);
-        }
+        //権限チェック
+        $this->authorize('delete', $savedSearch);
+
         $savedSearch->delete();
 
         //キャッシュ削除

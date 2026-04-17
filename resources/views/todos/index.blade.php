@@ -32,21 +32,25 @@
                 <h3 class="text-sm font-bold text-blue-700 mb-2">📌 保存済み検索</h3>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($savedSearches as $savedSearch)
-                        <div class="flex items-center gap-1 bg-white px-3 py-1 rounded border border-blue-300">
-                            <a href="{{ route('saved-searches.apply', $savedSearch) }}"
-                                class="text-blue-600 hover:underline text-sm">
-                                {{ $savedSearch->name }}
-                            </a>
-                            <form action="{{ route('saved-searches.destroy', $savedSearch) }}" method="POST"
-                                class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-500 hover:text-red-700 text-xs ml-1"
-                                    onclick="return confirm('削除しますか？')">
-                                    ✕
-                                </button>
-                            </form>
-                        </div>
+                        @can('view', $savedSearch)
+                            <div class="flex items-center gap-1 bg-white px-3 py-1 rounded border border-blue-300">
+                                <a href="{{ route('saved-searches.apply', $savedSearch) }}"
+                                    class="text-blue-600 hover:underline text-sm">
+                                    {{ $savedSearch->name }}
+                                </a>
+                                @can('delete', $savedSearch)
+                                    <form action="{{ route('saved-searches.destroy', $savedSearch) }}" method="POST"
+                                        class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs ml-1"
+                                            onclick="return confirm('削除しますか？')">
+                                            ✕
+                                        </button>
+                                    </form>
+                                @endcan
+                            </div>
+                        @endcan
                     @endforeach
                 </div>
             </div>
@@ -251,25 +255,29 @@
                             締切: {{ $item->end_date->format('Y-m-d') }}
                         </span>
 
-                        <form action="{{ route('todos.edit', $item->id) }}" method="GET" class="inline">
-                            @csrf
-                            <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                                編集
-                            </button>
-                        </form>
+                        @can('update', $item)
+                            <form action="{{ route('todos.edit', $item->id) }}" method="GET" class="inline">
+                                @csrf
+                                <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                    編集
+                                </button>
+                            </form>
 
-                        <button type="button" data-toggle-url="{{ route('todos.toggle', $item->id) }}"
-                            class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                            <span>{{ $item->completed_at ? '戻す' : '完了' }}</span>
-                        </button>
-
-                        <form action="{{ route('todos.destroy', $item->id) }}" method="POST" class="inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                                削除
+                            <button type="button" data-toggle-url="{{ route('todos.toggle', $item->id) }}"
+                                class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                <span>{{ $item->completed_at ? '戻す' : '完了' }}</span>
                             </button>
-                        </form>
+                        @endcan
+
+                        @can('delete', $item)
+                            <form action="{{ route('todos.destroy', $item->id) }}" method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                                    削除
+                                </button>
+                            </form>
+                        @endcan
                     </div>
                     {{-- サブタスク --}}
                     @if ($item->children->count() > 0)
@@ -282,25 +290,28 @@
                                         ⬜ <span class="flex-1">{{ $child->title }}</span>
                                     @endif
                                     {{-- 完了・削除ボタン --}}
-                                    <form action="{{ route('todos.toggle', $child->id) }}" method="POST"
-                                        class="inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit"
-                                            class="px-2 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
-                                            {{ $child->completed_at ? '戻す' : '完了' }}
-                                        </button>
-                                    </form>
-
-                                    <form action="{{ route('todos.destroy', $child->id) }}" method="POST"
-                                        class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            class="px-2 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600">
-                                            削除
-                                        </button>
-                                    </form>
+                                    @can('update', $child)
+                                        <form action="{{ route('todos.toggle', $child->id) }}" method="POST"
+                                            class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit"
+                                                class="px-2 py-0.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                                                {{ $child->completed_at ? '戻す' : '完了' }}
+                                            </button>
+                                        </form>
+                                    @endcan
+                                    @can('delete', $child)
+                                        <form action="{{ route('todos.destroy', $child->id) }}" method="POST"
+                                            class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="px-2 py-0.5 text-xs bg-red-500 text-white rounded hover:bg-red-600">
+                                                削除
+                                            </button>
+                                        </form>
+                                    @endcan
                                 </li>
                             @endforeach
                         </ul>

@@ -28,13 +28,15 @@
             @foreach ($categories as $category)
                 <li class="flex items-center gap-2 p-3 border rounded hover:bg-gray-50">
                     <span class="flex-1">{{ $category->name }}</span>
-                    <form action="{{ route('categories.destroy', $category->id) }}" method="POST" class="inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                            削除
-                        </button>
-                    </form>
+                    @can('delete', $category)
+                        <form action="{{ route('categories.destroy', $category->id) }}" method="POST" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                                削除
+                            </button>
+                        </form>
+                    @endcan
                 </li>
             @endforeach
         </ul>

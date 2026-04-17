@@ -150,14 +150,14 @@
                                     <span class="font-medium">{{ $comment->user->name }}</span>
                                     <span class="text-gray-500 ml-2">{{ $comment->created_at->diffForHumans() }}</span>
                                 </div>
-                                @if ($comment->user_id === auth()->id())
+                                @can('delete', $comment)
                                     <form action="{{ route('comments.destroy', $comment->id) }}" method="POST"
                                         class="inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-xs text-red-500 hover:underline">削除</button>
                                     </form>
-                                @endif
+                                @endcan
                             </div>
                             <p class="text-sm whitespace-pre-wrap">{{ $comment->body }}</p>
                         </li>

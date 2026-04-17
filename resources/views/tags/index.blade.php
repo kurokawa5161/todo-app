@@ -48,17 +48,19 @@
                                 ({{ $tag->todos->count() }}個のTodoに使用中)
                             </span>
 
-                            <div class="ml-auto">
-                                <form action="{{ route('tags.destroy', $tag->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                                        onclick="return confirm('このタグを削除しますか？')">
-                                        削除
-                                    </button>
-                                </form>
-                            </div>
+                            @can('delete', $tag)
+                                <div class="ml-auto">
+                                    <form action="{{ route('tags.destroy', $tag->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                            onclick="return confirm('このタグを削除しますか？')">
+                                            削除
+                                        </button>
+                                    </form>
+                                </div>
+                            @endcan
                         </li>
                     @endforeach
                 </ul>

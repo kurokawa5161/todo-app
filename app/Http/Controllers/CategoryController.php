@@ -34,6 +34,9 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
+        //権限チェック
+        $this->authorize('delete', $category);
+
         $category->delete();
 
         //キャッシュ削除

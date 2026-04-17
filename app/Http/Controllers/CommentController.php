@@ -22,11 +22,10 @@ class CommentController extends Controller
 
     public function destroy(Comment $comment)
     {
-        if ($comment->user_id == auth()->id()) {
-            $comment->delete();
-            return redirect()->back();
-        } else {
-            abort(403);
-        }
+        //権限チェック
+        $this->authorize('delete', $comment);
+
+        $comment->delete();
+        return redirect()->back();
     }
 }

@@ -52,9 +52,9 @@ class TagController extends Controller
      */
     public function destroy(Tag $tag)
     {
-        if ($tag->user_id !== auth()->id()) {
-            abort(403);
-        }
+        //権限チェック
+        $this->authorize('delete', $tag);
+
         $tag->delete();
 
         //キャッシュ削除
