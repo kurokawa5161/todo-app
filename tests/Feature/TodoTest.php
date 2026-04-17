@@ -53,8 +53,153 @@ class TodoTest extends TestCase
             'end_date' => '2026-12-31'
         ]);
 
-        $response = $this->actingAs($other)->delete('/todos/{$todo->id}');
+        $response = $this->actingAs($other)->delete("/todos/{$todo->id}");
         $response->assertNotFound();
         $this->assertDatabaseHas('todos', ['id' => $todo->id]);
+    }
+
+    //----------------------------------------------------------------
+    public function test_自分のTodoは更新できる()
+    {
+        $user = User::factory()->create();
+        $todo = $user->todos()->create([
+            'title' => '更新元',
+            'end_date' => '2026-12-31',
+            'priority' => 2
+        ]);
+        $update = [
+            'title' => '自分のTodoは更新できる',
+            'priority' => 2,
+            'end_date' => '2026-04-18'
+        ];
+
+        $response = $this->actingAs($user)->put("/todos/{$todo->id}", $update);
+        $response->assertRedirect('/todos');
+        $this->assertDatabaseHas('todos', ['title' => $update['title']]);
+    }
+
+    public function test_他人のTodoは更新できない()
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+
+        $todo = $owner->todos()->create([
+            'title' => '更新元',
+            'end_date' => '2026-12-31',
+            'priority' => 2
+        ]);
+        $update = [
+            'title' => '他人のTodoは更新できない',
+            'priority' => 2,
+            'end_date' => '2026-04-18'
+        ];
+
+        $response = $this->actingAs($other)->put("/todos/{$todo->id}", $update);
+        $response->assertNotFound();
+        $this->assertDatabaseMissing('todos', ['title' => $update['title']]);
+    }
+
+    public function test_自分のTodoは削除できる()
+    {
+        $owner = User::factory()->create();
+
+        $todo = $owner->todos()->create([
+            'title' => '自分のTodoは削除できる',
+            'end_date' => '2026-12-31'
+        ]);
+        $response = $this->actingAs($owner)->delete("/todos/{$todo->id}");
+        $response->assertRedirect('/todos');
+        $this->assertDatabaseMissing('todos', ['id' => $todo->id]);
+    }
+
+    public function test_自分のTodo編集画面にアクセスできる()
+    {
+        $owner = User::factory()->create();
+
+        $todo = $owner->todos()->create([
+            'title' => '自分のTodo編集画面にアクセスできる',
+            'priority' => 2,
+            'end_date' => '2026-12-31'
+        ]);
+
+        $response = $this->actingAs($owner)->get("/todos/{$todo->id}/edit");
+        $response->assertStatus(200);
+    }
+
+    public function test_他人のTodo編集画面にはアクセスできない()
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $todo = $owner->todos()->create([
+            'title' => '自分のTodo編集画面にアクセスできる',
+            'priority' => 2,
+            'end_date' => '2026-12-31'
+        ]);
+
+        $response = $this->actingAs($other)->get("/todos/{$todo->id}/edit");
+        $response->assertNotFound();
+    }
+
+    public function test_自分のTodoの完了状態を切り替えられる()
+    {
+        $owner = User::factory()->create();
+        $todo = $owner->todos()->create([
+            'title' => '自分のTodoの完了状態を切り替えられる',
+            'end_date' => '2026-12-31'
+        ]);
+
+        $response = $this->actingAs($owner)->patch("/todos/{$todo->id}/toggle");
+        $response->assertRedirect('/todos');
+
+        $todo->refresh();
+        $this->assertNotNull($todo->completed_at);
+    }
+
+    public function test_他人のTodoの完了状態は切り替えられない()
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+
+        $todo = $owner->todos()->create([
+            'title' => '他人のTodoの完了状態は切り替えられない',
+            'end_date' => '2026-12-31'
+        ]);
+
+        $response = $this->actingAs($other)->patch("/todos/{$todo->id}/toggle");
+        $response->assertNotFound();
+    }
+
+    public function test_自分のTodoのピン留めを切り替えられる()
+    {
+        $owner = User::factory()->create();
+        $todo = $owner->todos()->create([
+            'title' => '自分のTodoのピン留めを切り替えられる',
+            'end_date' => '2026-12-31',
+            'is_pinned' => 0
+        ]);
+
+        $response = $this->actingAs($owner)->patch("/todos/{$todo->id}/pin");
+        $response->assertRedirect('/todos');
+
+        $todo->refresh();
+        $this->assertTrue($todo->is_pinned);
+    }
+
+    public function test_他人のTodoのピン留めは切り替えられない()
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $todo = $owner->todos()->create([
+            'title' => '他人のTodoのピン留めは切り替えられない',
+            'end_date' => '2026-12-31',
+            'is_pinned' => 0
+        ]);
+
+        $update = [
+            'is_pinned' => 1,
+        ];
+        $response = $this->actingAs($other)->patch("/todos/{$todo->id}/pin");
+        $response->assertNotFound();
+        $this->assertDatabaseMissing('todos', ['is_pinned' => $update['is_pinned']]);
     }
 }
