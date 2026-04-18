@@ -16,8 +16,8 @@ Laravel実務スキル習得のための段階的学習プラン
 フェーズ6      ✅ 完了
 フェーズ7      ✅ 完了
 フェーズ8      ✅ 完了
-フェーズ9      🔄 進行中
-フェーズ10     ⬜ 未着手
+フェーズ9      ✅ 完了
+フェーズ10     ✅ 完了
 ```
 
 ---
@@ -231,9 +231,128 @@ Laravel実務スキル習得のための段階的学習プラン
 
 ---
 
+### フェーズ8：セキュリティ・認可
+**コミット**: `f0123ac feat: フェーズ8完了（セキュリティ・認可）`
+
+**実装内容**:
+- ✅ Policy（ポリシー）作成（パートA）
+  - TodoPolicy、CategoryPolicy、TagPolicy、SavedSearchPolicy、CommentPolicy 作成
+  - update, delete, view メソッド実装
+- ✅ Policy登録と権限チェック（パートB）
+  - AppServiceProvider で Gate::policy() 登録
+  - 各コントローラーに authorize() 追加
+  - 自分のリソースのみ操作可能に制限
+- ✅ Blade での権限表示制御（パートC）
+  - @can ディレクティブで編集・削除ボタンの表示制御
+  - 自分のリソースのみボタン表示
+
+**学んだ技術**:
+- Policy（ポリシー）の作成と実装
+- Gate による Policy 登録
+- コントローラーでの $this->authorize() 使用
+- Blade での @can ディレクティブ使用
+- 認可（Authorization）の理解
+- セキュリティの多層防御（Route::bind + Policy）
+
+---
+
+### フェーズ9：テスト
+**コミット**: 
+- `537361a feat: フェーズ9-A完了（Feature Test）`
+- `4994ed3 feat: フェーズ9-B完了（Unit Test）`
+- `8f45471 feat: フェーズ9-C完了（テストデータ管理・日本語化）`
+
+**実装内容**:
+- ✅ Feature Test（機能テスト）（パートA）
+  - TodoTest.php 作成（13テスト、28アサーション）
+  - 認証・CRUD・権限・完了切り替え・ピン留めのテスト
+  - RefreshDatabase トレイト使用
+  - Controller.php に AuthorizesRequests トレイト追加
+- ✅ Unit Test（単体テスト）（パートB）
+  - TodoModelTest.php 作成（11テスト、16アサーション）
+  - リレーションのテスト（6つ：user, category, parent, children, comments, tags）
+  - スコープのテスト（5つ：search, category, priority, dateRange, completedFilter）
+- ✅ テストデータ管理（パートC）
+  - Factory 作成（TodoFactory, CategoryFactory, TagFactory, CommentFactory）
+  - DatabaseSeeder 実装（テストユーザー、カテゴリ、タグ、Todo、コメント作成）
+  - 全モデルに HasFactory トレイト追加
+  - ダミーデータの日本語化（実用的な内容に改善）
+
+**学んだ技術**:
+- Feature Test（機能テスト）の基礎
+- Unit Test（単体テスト）の基礎
+- RefreshDatabase トレイト
+- User Factory
+- actingAs() メソッド（認証）
+- HTTPメソッドテスト（get, post, put, patch, delete）
+- アサーション（assertRedirect, assertStatus, assertDatabaseHas）
+- Factory でダミーデータ生成
+- Seeder でテストデータ投入
+- 多対多リレーション（attach メソッド）
+- 日本語ダミーデータの作成
+
+**テストユーザー**:
+- Email: test@example.com
+- Password: password
+
+---
+
+### フェーズ10：API開発
+**コミット**: `(最新) feat: フェーズ10完了（API開発：RESTful API・Sanctum・API Resource）`
+
+**実装内容**:
+- ✅ RESTful API 設計（パートA）
+  - routes/api.php にルート定義（GET/POST/PUT/DELETE）
+  - prefix('todos') と name('todos.') で統一
+  - モデルバインディング使用（{todo}）
+  - bootstrap/app.php に api ルート追加
+- ✅ Laravel Sanctum（トークン認証）（パートB）
+  - Sanctum インストール（composer require laravel/sanctum）
+  - personal_access_tokens テーブル作成
+  - User モデルに HasApiTokens トレイト追加
+  - AuthController 作成（login/logout）
+  - トークン発行・検証の実装
+- ✅ API Resource（レスポンス整形）（パートC）
+  - TodoResource 作成
+  - 不要なフィールドを除外（user_id など）
+  - image_path を image_url に変換（フルURL）
+  - カテゴリ、タグ、サブタスクの整形
+  - collection() と map() でコレクション処理
+
+**学んだ技術**:
+- RESTful API 設計
+- HTTP メソッド（GET/POST/PUT/DELETE）
+- Laravel Sanctum（トークン認証）
+- HasApiTokens トレイト
+- createToken() / plainTextToken
+- auth:sanctum ミドルウェア
+- API Resource（JsonResource）
+- collection() メソッド
+- map() メソッド
+- レスポンスの整形
+- curl コマンドでの API テスト
+
+**API エンドポイント**:
+- POST /api/login - ログイン（トークン発行）
+- POST /api/logout - ログアウト（トークン削除）
+- GET /api/todos - 一覧取得
+- POST /api/todos - 作成
+- GET /api/todos/{todo} - 詳細取得
+- PUT /api/todos/{todo} - 更新
+- DELETE /api/todos/{todo} - 削除
+
+**技術的なポイント**:
+1. **Sanctum トークン認証**: シンプルで強力な API 認証
+2. **API Resource**: レスポンスの統一と整形
+3. **モデルバインディング**: {todo} で自動的に Todo モデルを取得
+4. **collection() と map()**: 複数データの変換処理
+5. **フルURL 変換**: asset('storage/' . $path) でフルパス生成
+
+---
+
 ## 🎯 今後の学習フェーズ
 
-### フェーズ8：セキュリティ・認可【実務必須】
+### フェーズ11：デプロイ・CI/CD【実務必須】
 **目標**: セキュアなアプリケーション開発
 
 **学べる技術**:
@@ -367,6 +486,35 @@ CI/CDで必須。チーム開発では必ず求められる。
 
 ---
 
+### フェーズ11：デプロイ・CI/CD【実務必須】
+**目標**: 本番環境へのデプロイとCI/CD構築
+
+**学べる技術**:
+- Heroku / AWS / DigitalOcean
+- GitHub Actions
+- CI/CD パイプライン
+- 環境変数管理
+- ログ管理
+
+**実装する機能**:
+
+#### 機能⑰-A: 本番環境デプロイ
+- [ ] Heroku にデプロイ
+- [ ] データベース設定
+- [ ] .env の環境変数設定
+- [ ] ドメイン設定
+
+#### 機能⑰-B: CI/CD パイプライン
+- [ ] GitHub Actions 設定
+- [ ] 自動テスト実行
+- [ ] 自動デプロイ
+- [ ] ロールバック設定
+
+**実務での重要性**: ⭐⭐⭐⭐⭐
+実務では必須。開発効率が大幅に向上。
+
+---
+
 ## 📝 学習の進め方
 
 ### 推奨手順
@@ -459,5 +607,5 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 ---
 
-**最終更新**: 2026-04-17
-**現在のフェーズ**: フェーズ8 完了 → フェーズ9 進行中
+**最終更新**: 2026-04-18
+**現在のフェーズ**: フェーズ10 完了 → 次のフェーズへ
