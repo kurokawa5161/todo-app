@@ -18,8 +18,21 @@ class CategoryFactory extends Factory
      */
     public function definition(): array
     {
+        $categories = [
+            '仕事',
+            '個人',
+            '勉強',
+            '買い物',
+            '趣味',
+            '健康',
+            '家事',
+            'プロジェクト',
+            '読書',
+            '運動',
+        ];
+
         return [
-            'name' => fake()->word(),
+            'name' => fake()->randomElement($categories),
             'user_id' => User::factory(),
             'color' => fake()->randomElement(['red', 'yellow', 'green', 'blue', 'purple', 'pink', 'gray']),
         ];

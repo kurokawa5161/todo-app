@@ -18,9 +18,22 @@ class TagFactory extends Factory
      */
     public function definition(): array
     {
+        $tags = [
+            '重要',
+            '急ぎ',
+            '後で',
+            'レビュー待ち',
+            '確認中',
+            '完了予定',
+            'アイデア',
+            'メモ',
+            '質問',
+            'バグ',
+        ];
+
         return [
             'user_id' => User::factory(),
-            'name' => fake()->word(),
+            'name' => fake()->randomElement($tags),
             'color' => fake()->randomElement(['red', 'yellow', 'green', 'blue', 'purple', 'pink', 'gray']),
         ];
     }
