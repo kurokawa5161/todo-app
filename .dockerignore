@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Tests
+tests
+phpunit.xml
+.phpunit.result.cache
+
+# Documentation
+README.md
+LEARNING_PLAN.md
+*.md
+
+# Environment
+.env
+.env.example
+.env.backup
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Storage
+storage/app/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+
+# Other
+.DS_Store
+Thumbs.db

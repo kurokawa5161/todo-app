@@ -18,6 +18,7 @@ Laravel実務スキル習得のための段階的学習プラン
 フェーズ8      ✅ 完了
 フェーズ9      ✅ 完了
 フェーズ10     ✅ 完了
+フェーズ11     ✅ 完了
 ```
 
 ---
@@ -347,6 +348,62 @@ Laravel実務スキル習得のための段階的学習プラン
 3. **モデルバインディング**: {todo} で自動的に Todo モデルを取得
 4. **collection() と map()**: 複数データの変換処理
 5. **フルURL 変換**: asset('storage/' . $path) でフルパス生成
+
+---
+
+### フェーズ11：デプロイ・CI/CD
+**コミット**: `(最新) feat: フェーズ11完了（Docker・GitHub Actions CI/CD）`
+
+**実装内容**:
+- ✅ GitHub Actions（CI/CD パイプライン）（パートA）
+  - .github/workflows/tests.yml 作成
+  - push/PR 時に自動テスト実行
+  - MySQL サービスコンテナ設定
+  - PHP 8.3 セットアップ
+  - Composer インストール → マイグレーション → テスト実行
+- ✅ Docker 環境構築（パートB）
+  - Dockerfile 作成（PHP 8.3-FPM ベース）
+  - docker-compose.yml 作成（app/nginx/db の3コンテナ）
+  - docker/nginx/default.conf 作成（Nginx 設定）
+  - .dockerignore 作成（ビルド除外ファイル）
+
+**学んだ技術**:
+- GitHub Actions（CI/CD パイプライン）
+- YAML 設定ファイル
+- サービスコンテナ（MySQL）
+- Docker（コンテナ化）
+- docker-compose（マルチコンテナ管理）
+- Dockerfile 記述
+- Nginx 設定
+- FastCGI（PHP-FPM と Nginx の連携）
+- 環境変数管理
+
+**Docker 構成**:
+- **app**: PHP 8.3-FPM（Laravel アプリケーション）
+- **nginx**: Nginx Alpine（Web サーバー）
+- **db**: MySQL 8.0（データベース）
+- **ポート**: 8080（HTTP）、3307（MySQL）
+- **ネットワーク**: todo-network（内部通信）
+- **ボリューム**: db-data（データ永続化）
+
+**CI/CD ワークフロー**:
+1. トリガー: main/develop ブランチへの push/PR
+2. MySQL サービスコンテナ起動
+3. PHP 8.3 セットアップ
+4. Composer 依存関係インストール
+5. .env 設定（テスト用DB接続情報）
+6. マイグレーション実行
+7. テスト実行（php artisan test）
+
+**技術的なポイント**:
+1. **完全無料**: GitHub Actions（2000分/月無料）+ Docker（無料）
+2. **本番環境シミュレーション**: Docker で本番と同等の環境を構築
+3. **CI/CD 自動化**: push/PR 時に自動テスト実行でバグ早期発見
+4. **MySQL サービスコンテナ**: GitHub Actions でデータベーステスト可能
+5. **FastCGI**: Nginx（静的ファイル）+ PHP-FPM（PHP処理）の分離
+
+**実務での重要性**: ⭐⭐⭐⭐⭐
+Docker と CI/CD は現代の開発現場で必須。テレビ朝日メディアプレックスの歓迎スキルに「CI/CD経験」、技術スタックに「Docker」が明記されている。
 
 ---
 
