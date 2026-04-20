@@ -5,13 +5,13 @@ use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\AuthController;
 
 // 認証不要（ログイン）
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('api.login');
 
 // 認証必要（ログアウト）
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout'])->name('api.logout');
 
 // 認証必要（Todoリソース）
-Route::middleware('auth:sanctum')->prefix('todos')->name('todos.')->group(function () {
+Route::middleware('auth:sanctum')->prefix('todos')->name('api.todos.')->group(function () {
     //一覧
     Route::get('/', [TodoController::class, 'index'])->name('index');
     //作成
