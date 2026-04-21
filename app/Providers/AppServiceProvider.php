@@ -6,6 +6,9 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Http\Request;
 use App\Models\Todo;
 use App\Models\Comment;
 use App\Models\SavedSearch;
@@ -48,6 +51,10 @@ class AppServiceProvider extends ServiceProvider
         });
         Route::bind('comment', function ($value) {
             return Comment::where('user_id', auth()->id())->findOrFail($value);
+        });
+
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
     }
 }

@@ -4,6 +4,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Routing\Middleware\ThrottleRequests;
+use App\Http\Middleware\LogApiRequest;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,7 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->api(prepend: [
+            LogApiRequest::class,
+            ThrottleRequests::class . ':api',
+        ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
         //毎朝午前９時に期限通知を送信

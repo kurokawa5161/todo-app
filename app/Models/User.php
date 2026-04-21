@@ -73,4 +73,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(savedSearch::class);
     }
+
+    public function apiLog()
+    {
+        return $this->hasOne(apiLog::class);
+    }
 }

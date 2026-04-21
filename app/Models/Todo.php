@@ -101,6 +101,24 @@ class Todo extends Model
     }
 
     /**
+     * タグ絞り込み
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param int|null $tagId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeTag($query, $tagId)
+    {
+        if ($tagId) {
+            return $query->whereHas('tags', function ($q) use ($tagId) {
+                $q->where('tags.id', $tagId);
+            });
+        } else {
+            return $query;
+        }
+    }
+
+    /**
      * 優先度絞り込み
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
