@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\SavedSearchController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\TodoDeadlineNotification;
 
@@ -71,8 +72,24 @@ Route::prefix('saved-searches')->name('saved-searches.')->middleware('auth')->gr
     Route::delete('/{savedSearch}', [SavedSearchController::class, 'destroy'])->name('destroy');
 });
 
-//通知
+//Team
+Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
+    Route::get('/', [TeamController::class, 'index'])->name('index');
+    Route::post('/', [TeamController::class, 'store'])->name('store');
+    Route::get('/{team}', [TeamController::class, 'show'])->name('show');
+    Route::put('/{team}', [TeamController::class, 'update'])->name('update');
+    Route::delete('/{team}', [TeamController::class, 'destroy'])->name('destroy');
 
+    //メンバー管理
+    //チームに対してメンバーを追加
+    Route::post('/{team}/members', [TeamController::class, 'addMember'])->name('members.add');
+    //チームに対してメンバーを削除する
+    Route::delete('/{team}/members/{user}', [TeamController::class, 'removeMember'])->name('members.remove');
+    //チームのメンバーの権限を変更する
+    Route::patch('/{team}/members/{user}/role', [TeamController::class, 'updateRole'])->name('members.role');
+});
+
+//通知
 Route::get('/debug-todos', function () {
     $todos = \App\Models\Todo::select('id', 'title', 'end_date', 'completed_at')
         ->orderBy('id', 'desc')

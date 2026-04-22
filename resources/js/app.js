@@ -1,4 +1,7 @@
 import './bootstrap';
+import Alpine from 'alpinejs';
+window.Alpine = Alpine;
+Alpine.start();
 
 // Ajax処理：完了/未完了の切り替え
 document.addEventListener('DOMContentLoaded', function () {

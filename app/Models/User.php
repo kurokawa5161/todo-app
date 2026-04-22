@@ -78,4 +78,11 @@ class User extends Authenticatable
     {
         return $this->hasOne(apiLog::class);
     }
+
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class, 'team_user')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
 }

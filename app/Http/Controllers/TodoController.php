@@ -184,7 +184,6 @@ class TodoController extends Controller
         return redirect()->route('todos.index');
     }
 
-
     public function destroy(Todo $todo)
     {
         //権限チェック
