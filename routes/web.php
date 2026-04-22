@@ -36,6 +36,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/reminder', [ProfileController::class, 'updateReminder'])->name('profile.reminder');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/dashboard/export/csv', [DashboardController::class, 'exportCsv'])->name('dashboard.export.csv');
+    Route::get('/dashboard/export/pdf/weekly', [DashboardController::class, 'exportWeeklyPdf'])->name('dashboard.export.pdf.weekly');
+    Route::get('/dashboard/export/pdf/monthly', [DashboardController::class, 'exportMonthlyPdf'])->name('dashboard.export.pdf.monthly');
 });
 
 require __DIR__ . '/auth.php';

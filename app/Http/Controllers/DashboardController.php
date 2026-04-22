@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
 use App\Models\Todo;
 use App\Models\Category;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
@@ -166,5 +168,86 @@ class DashboardController extends Controller
         ];
 
         return view('dashboard', $result);
+    }
+
+    //CSVエクスポート
+    public function exportCsv()
+    {
+        $todos = Todo::where('user_id', auth()->id())
+            ->with(['category', 'tags'])->get();
+
+        $callback = function () use ($todos) {
+            $file = fopen('php://output', 'w');
+
+            //BOM追加（Excel用）
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            //ヘッダー行
+            fputcsv($file, ['ID', 'タイトル', '内容', 'カテゴリー', 'タグ', '優先度', '開始日', '終了日', '完了日', 'ステータス']);
+
+            foreach ($todos as $todo) {
+                fputcsv($file, [
+                    $todo->id,
+                    $todo->title,
+                    $todo->content,
+                    $todo->category->name ?? '未分類',
+                    $todo->tags->pluck('name')->join(', '),
+                    $todo->priority == 1 ? '高' : ($todo->priority == 2 ? '中' : '低'),
+                    $todo->start_date?->format('Y-m-d'),
+                    $todo->end_date?->format('Y-m-d'),
+                    $todo->completed_at?->format('Y-m-d'),
+                    $todo->completed_at ? '完了' : '未完了',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return Response::stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="todos_' . date('YmdHis') . '.csv"',
+        ]);
+    }
+
+    //週次PDFレポート
+    public function exportWeeklyPdf()
+    {
+        $startOfWeek = now()->startOfWeek();
+        $endOfWeek = now()->endOfWeek();
+
+        $data = [
+            'title' => '週次レポート',
+            'period' => $startOfWeek->format('Y-m-d') . '-' . $endOfWeek->format('Y-m-d'),
+            'total' => Todo::where('user_id', auth()->id())->count(),
+            'done' => Todo::where('user_id', auth()->id())->whereNotNull('completed_at')->count(),
+            'active' => Todo::where('user_id', auth()->id())->whereNull('completed_at')->count(),
+            'weekly_completed' =>  Todo::where('user_id', auth()->id())
+                ->whereNotNull('completed_at')
+                ->whereBetween('completed_at', [now()->startOfWeek(), now()->endOfWeek()])
+                ->count(),
+        ];
+
+        $pdf = Pdf::loadView('reports.weekly', $data);
+        return $pdf->download('weekly_report_' . date('YmdHis') . '.pdf');
+    }
+
+    //月次レポート
+    public function exportMonthlyPdf()
+    {
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $data = [
+            'title' => '月次レポート',
+            'period' => $startOfMonth->format('Y-m-d') . '-' . $endOfMonth->format('Y-m-d'),
+            'total' => Todo::where('user_id', auth()->id())->count(),
+            'done' => Todo::where('user_id', auth()->id())->whereNotNull('completed_at')->count(),
+            'active' => Todo::where('user_id', auth()->id())->whereNull('completed_at')->count(),
+            'monthly_completed' =>  Todo::where('user_id', auth()->id())
+                ->whereNotNull('completed_at')
+                ->whereBetween('end_date', [now()->startOfMonth(), now()->endOfMonth()])
+                ->count(),
+        ];
+        $pdf = Pdf::loadView('reports.monthly', $data);
+        return $pdf->download('monthly_report_' . date('YmdHis') . '.pdf');
     }
 }
