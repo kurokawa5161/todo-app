@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\SavedSearchController;
 use App\Http\Controllers\ProfileController;
@@ -25,9 +26,10 @@ Route::prefix('todos')->name('todos.')->middleware('auth')->group(function () {
     Route::patch('/{todo}/pin', [TodoController::class, 'togglePin'])->name('pin');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
