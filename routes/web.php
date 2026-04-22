@@ -11,6 +11,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\TodoDeadlineNotification;
+use App\Models\Todo;
 
 Route::get('/', function () {
     return view('welcome');
@@ -80,6 +81,11 @@ Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
     Route::put('/{team}', [TeamController::class, 'update'])->name('update');
     Route::delete('/{team}', [TeamController::class, 'destroy'])->name('destroy');
 
+    //招待機能
+    Route::post('/{team}/invite', [TeamController::class, 'invite'])->name('invite');
+    Route::get('/invitations/{token}', [TeamController::class, 'showInvitation'])->name('invitations.show');
+    Route::post('/invitations/{token}/accept', [TeamController::class, 'acceptInvitation'])->name('invitations.accept');
+
     //メンバー管理
     //チームに対してメンバーを追加
     Route::post('/{team}/members', [TeamController::class, 'addMember'])->name('members.add');
@@ -89,9 +95,11 @@ Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
     Route::patch('/{team}/members/{user}/role', [TeamController::class, 'updateRole'])->name('members.role');
 });
 
+
+
 //通知
 Route::get('/debug-todos', function () {
-    $todos = \App\Models\Todo::select('id', 'title', 'end_date', 'completed_at')
+    $todos = Todo::select('id', 'title', 'end_date', 'completed_at')
         ->orderBy('id', 'desc')
         ->limit(5)
         ->get();

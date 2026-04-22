@@ -27,6 +27,43 @@
                 @endforeach
             </div>
 
+            @can('update', $team)
+                <div class="bg-white p-6 rounded mb-6">
+                    <h3 class="text-lg font-semibold mb-4">メンバーを招待</h3>
+
+                    <form method="POST" action="{{ route('teams.invite', $team) }}" class="mt-4">
+                        @csrf
+
+                        {{-- メールアドレス入力 --}}
+                        <div class="mb-4">
+                            <label for="email" class="block text-sm font-medium text-gray-700">メールアドレス</label>
+                            <input type="email" name="email" id="email" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            @error('email')
+                                <span class="text-red-500 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        {{-- 権限選択 --}}
+                        <div class="mb-4">
+                            <label for="role" class="block text-sm font-medium text-gray-700">権限</label>
+                            <select name="role" id="role" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="viewer">Viewer（閲覧のみ）</option>
+                                <option value="member" selected>Member（メンバー）</option>
+                                <option value="admin">Admin（管理者）</option>
+                                <option value="owner">Owner（オーナー）</option>
+                            </select>
+                        </div>
+
+                        {{-- 送信ボタン --}}
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                            招待を送信
+                        </button>
+                    </form>
+                </div>
+            @endcan
+
             <!-- メンバー追加フォーム -->
             @can('update', $team)
                 <div class="bg-white p-6 rounded mb-6">

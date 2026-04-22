@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Team;
 use App\Models\User;
+use App\Models\TeamInvitation;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\TeamInvitationNotification;
 
 class TeamController extends Controller
 {
@@ -105,7 +108,6 @@ class TeamController extends Controller
     //チームのメンバーの権限を変更する
     public function updateRole(Request $request, Team $team, User $user)
     {
-
         //権限チェック
         $this->authorize('update', $team);
 
@@ -117,5 +119,99 @@ class TeamController extends Controller
         $team->users()->updateExistingPivot($user->id, ['role' => $validated['role']]);
 
         return redirect()->route('teams.show', $team);
+    }
+
+    //招待送信
+    public function invite(Request $request, Team $team)
+    {
+        //権限チェック
+        $this->authorize('update', $team);
+
+        $request->validate([
+            'email' => 'required|email|max:255',
+            'role' => 'required|in:owner,admin,member,viewer'
+        ]);
+
+        //既にメンバーかチェック
+        $user = User::where('email', $request->email)->first();
+        if ($user && $team->users()->where('user_id', $user->id)->exists()) {
+            return back()->with('error', 'このユーザーは既にメンバーです');
+        }
+
+        //招待レコード登録
+        $invitation = TeamInvitation::create([
+            'team_id' => $team->id,
+            'email' => $request->email,
+            'token' => TeamInvitation::generateToken(),
+            'role' => $request->role,
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        // Notification を使った匿名送信（アカウント不要でもメール送信可能）
+        Notification::route('mail', $request->email)
+            ->notify(new TeamInvitationNotification($invitation));
+
+        return redirect()->route('teams.show', $team);
+    }
+
+    //招待受諾ページ表示
+    public function showInvitation($token)
+    {
+        // 1. トークンで招待検索
+        $invitation = TeamInvitation::where('token', $token)
+            ->firstOrFail();
+
+        // 2. 有効期限チェック
+        if ($invitation->isExpired()) {
+            abort(404, '招待の有効期限が切れています');
+        }
+
+        // 3. 受諾済みチェック
+        if ($invitation->isAccepted()) {
+            abort(404, 'この招待は既に使用されています');
+        }
+
+        // 4. ビュー表示
+        return view('teams.invitations.show', compact('invitation'));
+    }
+
+    //招待受諾処理
+    public function acceptInvitation($token)
+    {
+        // 1. 招待検索・バリデーション
+        $invitation = TeamInvitation::where('token', $token)
+            ->firstOrFail();
+
+        //有効期限チェック
+        if ($invitation->isExpired()) {
+            return redirect()->route('teams.index')->with('error', '招待の有効期限が切れています');
+        }
+
+        //受諾済みチェック
+        if ($invitation->isAccepted()) {
+            return redirect()->route('teams.index')->with('error', 'この招待は既に使用されています');
+        }
+
+        // 2. ログインチェック
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'ログインしてください');
+        }
+
+        // 3. 既にメンバーかチェック
+        if ($invitation->team->users()->where('user_id', auth()->id())->exists()) {
+            return redirect()->route('teams.show', $invitation->team)
+                ->with('error', 'このユーザーは既にメンバーです');
+        }
+
+        // 4. チームに追加
+        $invitation->team->users()->attach(auth()->id(), ['role' => $invitation->role]);
+
+        // 5. 招待を受諾済みにマーク
+        $invitation->update([
+            'accepted_at' => now()
+        ]);
+
+        // 6. リダイレクト
+        return redirect()->route('teams.show', $invitation->team)->with('success', 'チームに追加しました');
     }
 }
