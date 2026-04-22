@@ -17,17 +17,24 @@ class DashboardController extends Controller
 
         //完了率（全体、今週、今月）
         $completedAll =  $total > 0 ? $done * 100 / $total : 0;
-        $week = Todo::where('user_id', auth()->id())->whereNotNull('completed_at')
-            ->whereRaw("strftime('%Y-%W', end_date) = strftime('%Y-%W', 'now')")
+
+        // 今週（データベース非依存）
+        $week = Todo::where('user_id', auth()->id())
+            ->whereNotNull('completed_at')
+            ->whereBetween('end_date', [now()->startOfWeek(), now()->endOfWeek()])
             ->count();
-        $deadlineWeek = Todo::where('user_id', auth()->id())->whereRaw("strftime('%Y-%W', end_date) = strftime('%Y-%W', 'now')")
+        $deadlineWeek = Todo::where('user_id', auth()->id())
+            ->whereBetween('end_date', [now()->startOfWeek(), now()->endOfWeek()])
             ->count();
         $completedWeek = $deadlineWeek > 0 ? $week * 100 / $deadlineWeek : 0;
 
-        $month = Todo::where('user_id', auth()->id())->whereNotNull('completed_at')
-            ->whereRaw("strftime('%Y-%m', end_date) = strftime('%Y-%m', 'now')")
+        // 今月（データベース非依存）
+        $month = Todo::where('user_id', auth()->id())
+            ->whereNotNull('completed_at')
+            ->whereBetween('end_date', [now()->startOfMonth(), now()->endOfMonth()])
             ->count();
-        $deadlineMonth = Todo::where('user_id', auth()->id())->whereRaw("strftime('%Y-%m', end_date) = strftime('%Y-%m', 'now')")
+        $deadlineMonth = Todo::where('user_id', auth()->id())
+            ->whereBetween('end_date', [now()->startOfMonth(), now()->endOfMonth()])
             ->count();
         $completedMonth = $deadlineMonth > 0 ? $month * 100 / $deadlineMonth : 0;
 
