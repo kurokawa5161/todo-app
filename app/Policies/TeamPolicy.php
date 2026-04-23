@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Team;
 use App\Models\User;
+use App\Models\Todo;
 use Illuminate\Auth\Access\Response;
 
 class TeamPolicy
@@ -65,5 +66,63 @@ class TeamPolicy
     {
         $role = $this->getUserRole($user, $team);
         return $role === 'owner';
+    }
+
+    /**
+     * チームTodoに関する権限ルール
+     * 閲覧（view）: メンバー全員（Viewer含む）
+     */
+    public function viewTeamTodo(User $user, Team $team): bool
+    {
+        return $this->isMember($user, $team);
+    }
+
+    /**
+     * チームTodoに関する権限ルール
+     * 作成（create）: Member以上
+     */
+    public function createTeamTodo(User $user, Team $team): bool
+    {
+        // メンバーでない場合は作成不可
+        if (!$this->isMember($user, $team)) {
+            return false;
+        }
+
+        $role = $this->getUserRole($user, $team);
+        return in_array($role, ['owner', 'admin', 'member']);
+    }
+
+    /**
+     * チームTodoに関する権限ルール
+     * 編集（update）: Todo作成者本人 または Admin/Owner
+     */
+    public function updateTeamTodo(User $user, Team $team, Todo $todo): bool
+    {
+        // メンバーでない場合は編集不可
+        if (!$this->isMember($user, $team)) {
+            return false;
+        }
+
+        $role = $this->getUserRole($user, $team);
+
+        // 作成者本人 または Admin/Owner
+        return ($todo->user_id == $user->id || in_array($role, ['owner', 'admin']));
+    }
+
+    /**
+     * チームTodoに関する権限ルール
+     * 削除（delete）: 作成者本人 または Admin/Owner
+     */
+    public function deleteTeamTodo(User $user, Team $team, Todo $todo): bool
+    {
+        // メンバーでない場合は削除不可
+        if (!$this->isMember($user, $team)) {
+            return false;
+        }
+
+        $role = $this->getUserRole($user, $team);
+
+        // 作成者本人 または Admin/Owner
+        return ($todo->user_id == $user->id || in_array($role, ['owner', 'admin']));
     }
 }

@@ -19,7 +19,8 @@ class Todo extends Model
         'priority',
         'parent_id',
         'is_pinned',
-        'image_path'
+        'image_path',
+        'team_id'
     ];
 
     protected $casts = [
@@ -60,6 +61,11 @@ class Todo extends Model
     public function tags()
     {
         return $this->belongsToMany(Tag::class, 'todo_tag');
+    }
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
     }
 
     // ========================================

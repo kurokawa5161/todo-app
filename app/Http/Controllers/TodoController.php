@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\TodoRequest;
 use App\Models\Todo;
+use App\Models\Team;
 use App\Models\Comment;
 use App\Models\TodoTag;
 use Illuminate\Support\Facades\Storage;
@@ -86,8 +87,15 @@ class TodoController extends Controller
         return view('todos.index', $data);
     }
 
-    public function store(TodoRequest $request)
+    public function store(TodoRequest $request, ?Team $team = null)
     {
+        //チームTodoの場合のみ権限チェック
+        if ($request->team_id) {
+            $team = Team::findOrFail($request->team_id);
+            //権限チェック
+            $this->authorize('createTeamTodo', $team);
+        }
+
         //todoテーブル
         $todo = new Todo();
         $todo->user_id = auth()->id();
@@ -102,9 +110,10 @@ class TodoController extends Controller
             $path = $request->file('image')->store('todos', 'public');
             $todo->image_path = $path;
         }
+        $todo->team_id = $request->team_id;
         $todo->save();
 
-        //中間テーブル
+        //中間テーブル（タグ紐づけ）
         if ($request->has('tags')) {
             $todo->tags()->attach($request->tags);
         }
@@ -119,13 +128,26 @@ class TodoController extends Controller
                 ]
             ]);
         }
-        return redirect()->route('todos.index');
+
+        //リダイレクト先を条件分岐
+        if ($request->team_id) {
+            return redirect()->route('teams.show', $team);
+        } else {
+            return redirect()->route('todos.index');
+        }
     }
 
-    public function edit(Todo $todo)
+    public function edit(Todo $todo, ?Team $team = null)
     {
-        //権限チェック
-        $this->authorize('update', $todo);
+        //チームTodoの場合のみ権限チェック
+        if ($todo->team_id) {
+            $team = Team::findOrFail($todo->team_id);
+            //権限チェック
+            $this->authorize('updateTeamTodo', [$team, $todo]);
+        } else {
+            //権限チェック
+            $this->authorize('update', $todo);
+        }
 
         $todo->load('comments.user');
         $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
@@ -134,15 +156,23 @@ class TodoController extends Controller
         $data = [
             'item' => $todo,
             'categories' => $categories,
-            'tags' => $tags
+            'tags' => $tags,
+            'team' => $team
         ];
         return view('todos.edit', $data);
     }
 
-    public function update(TodoRequest $request, Todo $todo)
+    public function update(TodoRequest $request, Todo $todo, ?Team $team = null)
     {
-        //権限チェック
-        $this->authorize('update', $todo);
+        //チームTodoの場合のみ権限チェック
+        if ($todo->team_id) {
+            $team = Team::findOrFail($todo->team_id);
+            //権限チェック
+            $this->authorize('updateTeamTodo', [$team, $todo]);
+        } else {
+            //権限チェック
+            $this->authorize('update', $todo);
+        }
 
         $todo->title = $request->title;
         $todo->content = $request->content;
@@ -162,13 +192,25 @@ class TodoController extends Controller
 
         $todo->save();
 
-        return redirect()->route('todos.index');
+        //リダイレクト先を条件分岐
+        if ($todo->team_id) {
+            return redirect()->route('teams.show', $team);
+        } else {
+            return redirect()->route('todos.index');
+        }
     }
 
-    public function toggle(Request $request, Todo $todo)
+    public function toggle(Request $request, Todo $todo, ?Team $team = null)
     {
-        //権限チェック
-        $this->authorize('update', $todo);
+        //チームTodoの場合のみ権限チェック
+        if ($todo->team_id) {
+            $team = Team::findOrFail($todo->team_id);
+            //権限チェック
+            $this->authorize('updateTeamTodo', [$team, $todo]);
+        } else {
+            //権限チェック
+            $this->authorize('update', $todo);
+        }
 
         $todo->completed_at = $todo->completed_at ? NULL : now();
         $todo->save();
@@ -181,26 +223,51 @@ class TodoController extends Controller
             ]);
         }
 
-        return redirect()->route('todos.index');
+        //リダイレクト先を条件分岐
+        if ($todo->team_id) {
+            return redirect()->route('teams.show', $team);
+        } else {
+            return redirect()->route('todos.index');
+        }
     }
 
-    public function destroy(Todo $todo)
+    public function destroy(Todo $todo, ?Team $team = null)
     {
-        //権限チェック
-        $this->authorize('delete', $todo);
+        //チームTodoの場合のみ権限チェック
+        if ($todo->team_id) {
+            $team = Team::findOrFail($todo->team_id);
+            //権限チェック
+            $this->authorize('deleteTeamTodo', [$team, $todo]);
+        } else {
+            //権限チェック
+            $this->authorize('delete', $todo);
+        }
 
         //画像削除
         if ($todo->image_path) {
             Storage::disk('public')->delete($todo->image_path);
         }
         $todo->delete();
-        return redirect()->route('todos.index');
+
+        //リダイレクト先を条件分岐
+        if ($todo->team_id) {
+            return redirect()->route('teams.show', $team);
+        } else {
+            return redirect()->route('todos.index');
+        }
     }
 
-    public function togglePin(Request $request, Todo $todo)
+    public function togglePin(Request $request, Todo $todo, ?Team $team = null)
     {
-        //権限チェック
-        $this->authorize('update', $todo);
+        //チームTodoの場合のみ権限チェック
+        if ($todo->team_id) {
+            $team = Team::findOrFail($todo->team_id);
+            //権限チェック
+            $this->authorize('updateTeamTodo', [$team, $todo]);
+        } else {
+            //権限チェック
+            $this->authorize('update', $todo);
+        }
 
         if ($todo->is_pinned) {
             $todo->is_pinned = FALSE;
@@ -215,6 +282,12 @@ class TodoController extends Controller
                 'is_pinned' => $todo->is_pinned,
             ]);
         }
-        return redirect()->route('todos.index');
+
+        //リダイレクト先を条件分岐
+        if ($todo->team_id) {
+            return redirect()->route('teams.show', $team);
+        } else {
+            return redirect()->route('todos.index');
+        }
     }
 }

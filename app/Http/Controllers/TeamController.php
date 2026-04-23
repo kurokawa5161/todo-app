@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\TeamInvitation;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\TeamInvitationNotification;
+use Illuminate\Support\Facades\Cache;
 
 class TeamController extends Controller
 {
@@ -46,8 +47,34 @@ class TeamController extends Controller
     {
         //権限チェック
         $this->authorize('view', $team);
+        $this->authorize('viewTeamTodo', $team);
 
-        return view('teams.show', compact('team'));
+        //チームのTodo一覧を取得
+        $items = $team->todos()
+            ->whereNull('parent_id')
+            ->with(['category', 'children', 'tags', 'user'])
+            ->orderBy('is_pinned', 'desc')
+            ->orderBy('end_date', 'asc')
+            ->paginate(10);
+
+        //カテゴリ
+        $categories = Cache::remember('user_' . auth()->id() . '_categories', 3600, function () {
+            return auth()->user()->categories()->orderBy('created_at', 'asc')->get();
+        });
+
+        //タグ
+        $tags = Cache::remember('user_' . auth()->id() . '_tags', 3600, function () {
+            return auth()->user()->tags()->orderBy('created_at', 'asc')->get();
+        });
+
+        $data = [
+            'team' => $team,
+            'items' => $items,
+            'categories' => $categories,
+            'tags' => $tags
+        ];
+
+        return view('teams.show', $data);
     }
 
     public function update(Request $request, Team $team)
