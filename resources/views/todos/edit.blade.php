@@ -27,7 +27,9 @@
             enctype="multipart/form-data">
             @csrf
             @method('PUT')
-            <input type="hidden" name="team_id" value="{{ $team->id }}">
+            @if($team)
+                <input type="hidden" name="team_id" value="{{ $team->id }}">
+            @endif
             <div>
                 <label class="block text-sm font-medium mb-1">カテゴリ</label>
                 <select name="category_id" class="w-full px-3 py-2 border rounded">
