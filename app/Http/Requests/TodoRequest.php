@@ -26,7 +26,7 @@ class TodoRequest extends FormRequest
             'title' => 'required|string|max:100',
             'content' => 'nullable|string|max:200',
             'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
+            'end_date' => 'required|date',
             'category_id' => 'nullable|integer|exists:categories,id',
             'priority' => 'nullable|integer|between:1,3',
             'parent_id' => 'nullable|integer|exists:todos,id',

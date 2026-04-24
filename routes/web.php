@@ -12,12 +12,18 @@ use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\TodoDeadlineNotification;
 use App\Models\Todo;
+use Illuminate\Support\Facades\Log;
 
+// ========================================
+// 公開ページ
+// ========================================
 Route::get('/', function () {
     return view('welcome');
 });
 
-//Todo
+// ========================================
+// Todo管理
+// ========================================
 Route::prefix('todos')->name('todos.')->middleware('auth')->group(function () {
     Route::get('/', [TodoController::class, 'index'])->name('index');
     Route::post('/', [TodoController::class, 'store'])->name('store');
@@ -28,52 +34,74 @@ Route::prefix('todos')->name('todos.')->middleware('auth')->group(function () {
     Route::patch('/{todo}/pin', [TodoController::class, 'togglePin'])->name('pin');
 });
 
+// ========================================
+// ダッシュボード
+// ========================================
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-
+// ========================================
+// プロフィール・エクスポート・通知API
+// ========================================
 Route::middleware('auth')->group(function () {
+    //プロフィール
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/reminder', [ProfileController::class, 'updateReminder'])->name('profile.reminder');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    //エクスポート
     Route::get('/dashboard/export/csv', [DashboardController::class, 'exportCsv'])->name('dashboard.export.csv');
     Route::get('/dashboard/export/pdf/weekly', [DashboardController::class, 'exportWeeklyPdf'])->name('dashboard.export.pdf.weekly');
     Route::get('/dashboard/export/pdf/monthly', [DashboardController::class, 'exportMonthlyPdf'])->name('dashboard.export.pdf.monthly');
+
+    //通知API
+    Route::get('/notifications/unread-count', function () {
+        return response()->json(['count' => auth()->user()->unreadNotifications->count()]);
+    });
 });
 
 require __DIR__ . '/auth.php';
 
-//カテゴリー
+// ========================================
+// カテゴリー管理
+// ========================================
 Route::prefix('categories')->name('categories.')->middleware('auth')->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->name('index');
     Route::post('/', [CategoryController::class, 'store'])->name('store');
     Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
 });
 
-//コメント
+// ========================================
+// コメント機能
+// ========================================
 Route::name('comments.')->middleware('auth')->group(function () {
     Route::post('/todos/{todo}/comments', [CommentController::class, 'store'])->name('store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('destroy');
 });
 
-//タグ
+// ========================================
+// タグ管理
+// ========================================
 Route::prefix('tags')->name('tags.')->middleware('auth')->group(function () {
     Route::get('/', [TagController::class, 'index'])->name('index');
     Route::post('/', [TagController::class, 'store'])->name('store');
     Route::delete('/{tag}', [TagController::class, 'destroy'])->name('destroy');
 });
 
-//検索条件
+// ========================================
+// 保存済み検索条件
+// ========================================
 Route::prefix('saved-searches')->name('saved-searches.')->middleware('auth')->group(function () {
     Route::post('/', [SavedSearchController::class, 'store'])->name('store');
     Route::get('/{savedSearch}/apply', [SavedSearchController::class, 'apply'])->name('apply');
     Route::delete('/{savedSearch}', [SavedSearchController::class, 'destroy'])->name('destroy');
 });
 
-//Team
+// ========================================
+// チーム機能
+// ========================================
 Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
     Route::get('/', [TeamController::class, 'index'])->name('index');
     Route::post('/', [TeamController::class, 'store'])->name('store');
@@ -97,7 +125,9 @@ Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
 
 
 
-//通知
+// ========================================
+// デバッグ用ルート
+// ========================================
 Route::get('/debug-todos', function () {
     $todos = Todo::select('id', 'title', 'end_date', 'completed_at')
         ->orderBy('id', 'desc')
@@ -118,4 +148,16 @@ Route::get('/test-notification', function () {
     }
     // 4. 結果を表示
     return '通知を送信しました、storage/logs/laravel.log を確認してください';
+})->middleware('auth');
+
+Route::get('/debug-sql-todo/{id}', function ($id) {
+    Log::info('Debug SQL route called', ['id' => $id]);
+
+    $todo = Todo::where('id', $id)->first();
+    Log::info('SQL result', ['todo' => $todo]);
+
+    return response()->json([
+        'from_db_table' => $todo,
+        'from_model' => Todo::find($id),
+    ]);
 })->middleware('auth');

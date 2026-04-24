@@ -53,4 +53,12 @@
             </div>
         </div>
     </div>
+
+    <script>
+        window.userId = {{ auth()->id() }};
+        @isset($team)
+            window.teamId = {{ $team->id }};
+        @endisset
+    </script>
+
 </x-app-layout>

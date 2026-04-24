@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12" data-team-page>
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             <!-- メンバー一覧 -->
@@ -29,6 +29,14 @@
                         @endcan
                     </div>
                 @endforeach
+            </div>
+
+            <!-- オンラインメンバー -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">🟢 オンラインメンバー</h3>
+                <div id="online-members" class="space-y-2">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">読み込み中...</p>
+                </div>
             </div>
 
             @can('update', $team)
@@ -108,7 +116,7 @@
 
 
             {{-- タスク一覧 --}}
-            <ul class="space-y-2 mb-6">
+            <ul id="todos-list" class="space-y-2 mb-6">
                 @foreach ($items as $item)
                     @php
                         $colorClass = match ($item->category->color ?? 'purple') {
@@ -399,4 +407,9 @@
             @endcan
         </div>
     </div>
+
+    <script>
+        window.userId = {{ auth()->id() }};
+        window.teamId = {{ $team->id }};
+    </script>
 </x-app-layout>

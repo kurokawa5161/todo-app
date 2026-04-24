@@ -8,12 +8,19 @@ use App\Models\Todo;
 use App\Models\Team;
 use App\Models\Comment;
 use App\Models\TodoTag;
+use App\Models\Category;
+use App\Models\Tag;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
 use App\Policies\TodoPolicy;
+use App\Events\TodoCreated;
+use App\Events\TodoUpdated;
+use App\Events\TodoDeleted;
+use Illuminate\Support\Facades\Log;
 
 class TodoController extends Controller
 {
+
     public function index(Request $request)
     {
         $query = auth()->user()->todos()->whereNull('parent_id')->with(['category', 'children', 'tags']);
@@ -113,6 +120,9 @@ class TodoController extends Controller
         $todo->team_id = $request->team_id;
         $todo->save();
 
+        //アラート
+        event(new TodoCreated($todo));
+
         //中間テーブル（タグ紐づけ）
         if ($request->has('tags')) {
             $todo->tags()->attach($request->tags);
@@ -142,25 +152,33 @@ class TodoController extends Controller
         //チームTodoの場合のみ権限チェック
         if ($todo->team_id) {
             $team = Team::findOrFail($todo->team_id);
-            //権限チェック
             $this->authorize('updateTeamTodo', [$team, $todo]);
         } else {
-            //権限チェック
             $this->authorize('update', $todo);
         }
 
         $todo->load('comments.user');
-        $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
-        $tags = auth()->user()->tags()->orderBy('name', 'asc')->get();
 
-        $data = [
+        // カテゴリとタグの取得
+        if ($todo->team_id && $team) {
+            // チームTodoの場合：チーム全体のカテゴリとタグを取得
+            $teamUserIds = $team->users()->pluck('users.id');
+            $categories = Category::whereIn('user_id', $teamUserIds)->orderBy('created_at', 'asc')->get();
+            $tags = Tag::whereIn('user_id', $teamUserIds)->orderBy('name', 'asc')->get();
+        } else {
+            // 個人Todoの場合：自分のカテゴリとタグのみ
+            $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
+            $tags = auth()->user()->tags()->orderBy('name', 'asc')->get();
+        }
+
+        return view('todos.edit', [
             'item' => $todo,
             'categories' => $categories,
             'tags' => $tags,
             'team' => $team
-        ];
-        return view('todos.edit', $data);
+        ]);
     }
+
 
     public function update(TodoRequest $request, Todo $todo, ?Team $team = null)
     {
@@ -191,6 +209,9 @@ class TodoController extends Controller
         $todo->tags()->sync($request->tags ?? []);
 
         $todo->save();
+
+        //アラート
+        event(new TodoUpdated($todo));
 
         //リダイレクト先を条件分岐
         if ($todo->team_id) {
@@ -247,6 +268,10 @@ class TodoController extends Controller
         if ($todo->image_path) {
             Storage::disk('public')->delete($todo->image_path);
         }
+
+        //アラート
+        event(new TodoDeleted($todo));
+
         $todo->delete();
 
         //リダイレクト先を条件分岐

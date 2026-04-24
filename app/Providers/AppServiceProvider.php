@@ -44,7 +44,21 @@ class AppServiceProvider extends ServiceProvider
 
         Model::preventLazyLoading(! app()->isProduction());
         Route::bind('todo', function ($value) {
-            return auth()->user()->todos()->findOrFail($value);
+            $todo = Todo::findOrFail($value);
+
+            //個人Todo＝自分の実
+            if (!$todo->team_id) {
+                if ($todo->user_id !== auth()->id()) {
+                    abort(404);
+                }
+                return $todo;
+            }
+
+            //チームTodo＝チームメンバーならOK
+            if (auth()->user()->teams()->where('teams.id', $todo->team_id)->exists()) {
+                return $todo;
+            }
+            abort(404);
         });
         Route::bind('category', function ($value) {
             return auth()->user()->categories()->findOrFail($value);
