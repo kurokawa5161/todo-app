@@ -1,0 +1,9 @@
+{
+  "action": "opened",
+  "issue": {
+    "title": "バグ修正：ログイン画面エラー",
+    "body": "ログイン画面で500エラーが発生する問題を修正する",
+    "html_url": "https://github.com/user/repo/issues/123",
+    "labels": [{"name": "bug"}, {"name": "high"}]
+  }
+}

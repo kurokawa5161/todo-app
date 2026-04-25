@@ -9,6 +9,8 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
  * allow your team to quickly build robust real-time web applications.
  */
 
+// Reverb停止中のためコメントアウト
+/*
 import './echo';
 
 import Echo from 'laravel-echo';
@@ -25,3 +27,4 @@ window.Echo = new Echo({
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
 });
+*/

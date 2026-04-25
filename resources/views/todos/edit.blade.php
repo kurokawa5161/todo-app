@@ -10,11 +10,14 @@
             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
 
                 {{-- 編集インジケーター --}}
-                <div id="editing-indicator" class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-800 rounded text-yellow-800 dark:text-yellow-200 text-sm" style="display: none;"></div>
+                <div id="editing-indicator"
+                    class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-800 rounded text-yellow-800 dark:text-yellow-200 text-sm"
+                    style="display: none;"></div>
 
                 {{-- エラー表示 --}}
                 @if ($errors->any())
-                    <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded">
+                    <div
+                        class="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded">
                         <ul class="list-disc list-inside text-red-600 dark:text-red-400 text-sm">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -24,16 +27,17 @@
                 @endif
 
                 {{-- 編集フォーム --}}
-                <form action="{{ route('todos.update', $item->id) }}" method="POST" class="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4"
-                    enctype="multipart/form-data">
+                <form action="{{ route('todos.update', $item->id) }}" method="POST"
+                    class="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    @if($team)
+                    @if ($team)
                         <input type="hidden" name="team_id" value="{{ $team->id }}">
                     @endif
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">カテゴリ</label>
-                        <select name="category_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                        <select name="category_id"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                             <option value="">（なし）</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}"
@@ -46,7 +50,8 @@
 
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">優先度</label>
-                        <select name="priority" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                        <select name="priority"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                             <option value="1" {{ old('priority', $item->priority) == 1 ? 'selected' : '' }}>
                                 高
                             </option>
@@ -90,7 +95,8 @@
                                 <img src="{{ asset('storage/' . $item->image_path) }}" class="max-w-xs rounded">
                             </div>
                         @endif
-                        <input type="file" name="image" accept="image/*" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                        <input type="file" name="image" accept="image/*"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                         @error('image')
                             <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p>
                         @enderror
@@ -127,7 +133,8 @@
                             @if ($tags->count() == 0)
                                 <p class="text-sm text-gray-500 dark:text-gray-400">
                                     タグがありません。
-                                    <a href="{{ route('tags.index') }}" class="text-blue-600 dark:text-blue-400 hover:underline">
+                                    <a href="{{ route('tags.index') }}"
+                                        class="text-blue-600 dark:text-blue-400 hover:underline">
                                         タグ管理
                                     </a>
                                     から作成してください。
@@ -135,10 +142,19 @@
                             @endif
                         </div>
                     </div>
-                    <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded font-medium transition">
+                    <button type="submit"
+                        class="w-full py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded font-medium transition">
                         更新
                     </button>
                 </form>
+
+                {{-- アクションボタン --}}
+                <div class="mt-4 flex gap-3">
+                    <a href="{{ route('todos.export-calendar', $item) }}"
+                        class="flex-1 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded font-medium transition text-center">
+                        📅 カレンダーにエクスポート
+                    </a>
+                </div>
 
                 {{-- コメント --}}
                 <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -148,22 +164,27 @@
                     @if ($item->comments->count() > 0)
                         <ul class="space-y-2 mb-4">
                             @foreach ($item->comments as $comment)
-                                <li class="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded">
+                                <li
+                                    class="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded">
                                     <div class="flex items-center justify-between mb-1">
                                         <div class="text-sm">
-                                            <span class="font-medium text-gray-900 dark:text-gray-100">{{ $comment->user->name }}</span>
-                                            <span class="text-gray-500 dark:text-gray-400 ml-2">{{ $comment->created_at->diffForHumans() }}</span>
+                                            <span
+                                                class="font-medium text-gray-900 dark:text-gray-100">{{ $comment->user->name }}</span>
+                                            <span
+                                                class="text-gray-500 dark:text-gray-400 ml-2">{{ $comment->created_at->diffForHumans() }}</span>
                                         </div>
                                         @can('delete', $comment)
                                             <form action="{{ route('comments.destroy', $comment->id) }}" method="POST"
                                                 class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-xs text-red-500 dark:text-red-400 hover:underline">削除</button>
+                                                <button type="submit"
+                                                    class="text-xs text-red-500 dark:text-red-400 hover:underline">削除</button>
                                             </form>
                                         @endcan
                                     </div>
-                                    <p class="text-sm whitespace-pre-wrap text-gray-900 dark:text-gray-100">{{ $comment->body }}</p>
+                                    <p class="text-sm whitespace-pre-wrap text-gray-900 dark:text-gray-100">
+                                        {{ $comment->body }}</p>
                                 </li>
                             @endforeach
                         </ul>
@@ -172,7 +193,8 @@
                     @endif
 
                     {{-- タイピングインジケーター --}}
-                    <div id="typing-indicator" class="mb-2 text-sm text-gray-500 dark:text-gray-400 italic" style="display: none;"></div>
+                    <div id="typing-indicator" class="mb-2 text-sm text-gray-500 dark:text-gray-400 italic"
+                        style="display: none;"></div>
 
                     {{-- コメント投稿フォーム --}}
                     <form action="{{ route('comments.store', $item->id) }}" method="POST">
@@ -182,7 +204,8 @@
                         @error('body')
                             <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p>
                         @enderror
-                        <button type="submit" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded transition">
+                        <button type="submit"
+                            class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded transition">
                             投稿
                         </button>
                     </form>
@@ -195,7 +218,7 @@
     <script>
         window.userId = {{ auth()->id() }};
         @isset($team)
-        window.teamId = {{ $team->id }};
+            window.teamId = {{ $team->id }};
         @endisset
     </script>
 </x-app-layout>

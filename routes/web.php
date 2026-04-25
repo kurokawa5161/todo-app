@@ -9,6 +9,7 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\SavedSearchController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\GitHubWebhookController;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\TodoDeadlineNotification;
 use App\Models\Todo;
@@ -20,6 +21,11 @@ use Illuminate\Support\Facades\Log;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// ========================================
+// GitHub Webhook（CSRF除外済み）
+// ========================================
+Route::post('/webhook/github', [GitHubWebhookController::class, 'handleWebhook']);
 
 // ========================================
 // Todo管理
@@ -55,6 +61,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/export/csv', [DashboardController::class, 'exportCsv'])->name('dashboard.export.csv');
     Route::get('/dashboard/export/pdf/weekly', [DashboardController::class, 'exportWeeklyPdf'])->name('dashboard.export.pdf.weekly');
     Route::get('/dashboard/export/pdf/monthly', [DashboardController::class, 'exportMonthlyPdf'])->name('dashboard.export.pdf.monthly');
+
+    //カレンダー
+    Route::get('/todos/{todo}/export-calendar', [TodoController::class, 'exportCalendar'])->name('todos.export-calendar');
 
     //通知API
     Route::get('/notifications/unread-count', function () {
@@ -122,7 +131,6 @@ Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
     //チームのメンバーの権限を変更する
     Route::patch('/{team}/members/{user}/role', [TeamController::class, 'updateRole'])->name('members.role');
 });
-
 
 
 // ========================================

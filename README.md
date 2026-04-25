@@ -1,9 +1,10 @@
 # Laravel Todo App
 
-Laravel学習用のTodoアプリケーション。フェーズ10まで完了（API開発）。
+Laravel学習用のTodoアプリケーション。フェーズ16まで完了（外部サービス連携）。
 
 ## 機能
 
+### 基本機能
 - ✅ Todo CRUD操作
 - ✅ カテゴリ・タグ管理
 - ✅ 親子関係（サブタスク）
@@ -11,18 +12,43 @@ Laravel学習用のTodoアプリケーション。フェーズ10まで完了（A
 - ✅ 画像アップロード
 - ✅ 期限通知メール
 - ✅ タスクスケジューリング
+
+### API・テスト
 - ✅ RESTful API（Laravel Sanctum認証）
 - ✅ API Resource（レスポンス整形）
 - ✅ Feature/Unit Test
 
+### 統計・レポート
+- ✅ 統計ダッシュボード
+- ✅ グラフ表示
+- ✅ CSV/PDFエクスポート
+
+### チーム機能
+- ✅ チーム作成・管理
+- ✅ メンバー招待
+- ✅ チームTodo管理
+
+### リアルタイム機能
+- ✅ Todo更新のリアルタイム通知
+- ✅ コメント通知システム
+- ✅ Laravel Reverb（WebSocket）
+
+### 外部サービス連携
+- ✅ Slack通知（データベース保存）
+- ✅ Google Calendar連携（.icsエクスポート）
+- ✅ GitHub連携（Webhook・Issue同期）
+
 ## 技術スタック
 
 - **Backend**: Laravel 11, PHP 8.3
-- **Database**: MySQL 8.0
+- **Database**: SQLite（開発）/ MySQL 8.0（本番）
 - **Authentication**: Laravel Breeze, Laravel Sanctum
 - **Testing**: Pest, PHPUnit
 - **CI/CD**: GitHub Actions
 - **Container**: Docker, Docker Compose
+- **WebSocket**: Laravel Reverb
+- **Calendar**: eluceo/ical
+- **External APIs**: GitHub API, Slack（データベース保存）
 
 ## ローカル開発（Herd使用）
 

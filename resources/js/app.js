@@ -1,6 +1,6 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
-import './realtime';
+// import './realtime'; // Reverb停止中のためコメントアウト
 
 window.Alpine = Alpine;
 Alpine.start();

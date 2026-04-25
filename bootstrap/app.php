@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
             LogApiRequest::class,
             ThrottleRequests::class . ':api',
         ]);
+
+        // GitHub Webhook用のCSRF除外
+        $middleware->validateCsrfTokens(except: [
+            '/webhook/github',
+        ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
         //毎朝午前９時に期限通知を送信

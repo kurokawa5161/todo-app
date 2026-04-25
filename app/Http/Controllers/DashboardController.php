@@ -41,10 +41,10 @@ class DashboardController extends Controller
         $completedMonth = $deadlineMonth > 0 ? $month * 100 / $deadlineMonth : 0;
 
         //期限遵守率
-        //期限があるTodo
-        $deadLineTodo = Todo::where('user_id', auth()->id())->whereNotNull('end_date')->count();
+        //全Todo（end_dateは必須）
+        $deadLineTodo = Todo::where('user_id', auth()->id())->count();
         //期限内完了Todo
-        $deadLineCompTodo = Todo::where('user_id', auth()->id())->whereNotNull('end_date')
+        $deadLineCompTodo = Todo::where('user_id', auth()->id())
             ->whereNotNull('completed_at')->whereColumn('completed_at', '<=', 'end_date')->count();
         $deadLineCompTodoPct = $deadLineTodo > 0 ? $deadLineCompTodo / $deadLineTodo * 100 : 0;
 
@@ -194,7 +194,7 @@ class DashboardController extends Controller
                     $todo->tags->pluck('name')->join(', '),
                     $todo->priority == 1 ? '高' : ($todo->priority == 2 ? '中' : '低'),
                     $todo->start_date?->format('Y-m-d'),
-                    $todo->end_date?->format('Y-m-d'),
+                    $todo->end_date->format('Y-m-d'),
                     $todo->completed_at?->format('Y-m-d'),
                     $todo->completed_at ? '完了' : '未完了',
                 ]);

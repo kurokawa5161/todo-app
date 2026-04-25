@@ -8,7 +8,7 @@ use App\Models\Todo;
 use App\Models\User;
 use Carbon\Carbon;
 use App\Notifications\TodoDeadlineNotification;
-
+use App\Notifications\TodoSlackNotification;
 
 class SendDeadlineNotifications extends Command
 {
@@ -44,6 +44,7 @@ class SendDeadlineNotifications extends Command
             foreach ($todos as $todo) {
                 //通知をおくる
                 $user->notify(new TodoDeadlineNotification($todo));
+                $user->notify(new TodoSlackNotification($todo, 'due_soon'));
             }
             //ログに記録
             if ($todos->count() > 0) {

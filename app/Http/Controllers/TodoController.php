@@ -17,6 +17,13 @@ use App\Events\TodoCreated;
 use App\Events\TodoUpdated;
 use App\Events\TodoDeleted;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\TodoSlackNotification;
+use Eluceo\iCal\Domain\Entity\Calendar;
+use Eluceo\iCal\Domain\Entity\Event;
+use Eluceo\iCal\Domain\ValueObject\DateTime;
+use Eluceo\iCal\Domain\ValueObject\TimeSpan;
+use Eluceo\iCal\Presentation\Factory\CalendarFactory;
+use App\Services\GitHubService;
 
 class TodoController extends Controller
 {
@@ -122,6 +129,8 @@ class TodoController extends Controller
 
         //アラート
         event(new TodoCreated($todo));
+        //Slack通知
+        $todo->user->notify(new TodoSlackNotification($todo, 'created'));
 
         //中間テーブル（タグ紐づけ）
         if ($request->has('tags')) {
@@ -212,6 +221,8 @@ class TodoController extends Controller
 
         //アラート
         event(new TodoUpdated($todo));
+        //Slack通知
+        $todo->user->notify(new TodoSlackNotification($todo, 'updated'));
 
         //リダイレクト先を条件分岐
         if ($todo->team_id) {
@@ -235,6 +246,17 @@ class TodoController extends Controller
 
         $todo->completed_at = $todo->completed_at ? NULL : now();
         $todo->save();
+
+        //GitHub Issueがあれば閉じる
+        if ($todo->completed_at && $todo->github_issue_url) {
+            $githubService = new GitHubService();
+            $githubService->closeIssue($todo->github_issue_url);
+        }
+
+        //Slack通知
+        if ($todo->completed_at) {
+            $todo->user->notify(new TodoSlackNotification($todo, 'completed'));
+        }
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -314,5 +336,34 @@ class TodoController extends Controller
         } else {
             return redirect()->route('todos.index');
         }
+    }
+
+    public function exportCalendar(todo $todo)
+    {
+        //権限チェック
+        $this->authorize('view', $todo);
+
+        //イベント作成
+        $event = new Event();
+        $event->setSummary($todo->title)
+            ->setDescription($todo->content ?? '')
+            ->setOccurrence(
+                new TimeSpan(
+                    new DateTime($todo->start_date ?? $todo->end_date, true),
+                    new DateTime($todo->end_date, true)
+                )
+            );
+
+        //カレンダー作成
+        $calendar = new Calendar([$event]);
+
+        //.ics生成
+        $componentFactory = new CalendarFactory();
+        $calendarComponent = $componentFactory->createCalendar($calendar);
+
+        //ダウンロード
+        return response($calendarComponent)
+            ->header('Content-Type', 'text/calendar; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="todo-' . $todo->id . '.ics"');
     }
 }
