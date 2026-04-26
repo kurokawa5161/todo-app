@@ -14,13 +14,15 @@ class TodoDeadlineNotification extends Notification implements ShouldQueue
     use Queueable;
 
     protected $todo;
+    protected $daysBefore;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(Todo $todo)
+    public function __construct(Todo $todo, int $daysBefore = 3)
     {
         $this->todo = $todo;
+        $this->daysBefore = $daysBefore;
     }
 
     /**
@@ -39,9 +41,12 @@ class TodoDeadlineNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Todoの期限が近づいています')
-            ->line('タイトル：' . $this->todo->title)
-            ->line('締切日：' . Carbon::parse($this->todo->end_date)->format('Y年m月d日'))
+            ->subject("Todoの期限が近づいています（{$this->daysBefore}日後）")
+            ->greeting('こんにちは、' . $notifiable->name . 'さん')
+            ->line("**{$this->daysBefore}日後**が期限のTodoがあります")
+            ->line('')
+            ->line('**タイトル**：' . $this->todo->title)
+            ->line('**締切日**：' . Carbon::parse($this->todo->end_date)->format('Y年m月d日'))
             ->action('Todoを確認', url('/todos/' . $this->todo->id));
     }
 
@@ -53,7 +58,10 @@ class TodoDeadlineNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'todo_id' =>  $this->todo->id,
+            'todo_title' => $this->todo->title,
+            'end_date' => $this->todo->end_date,
+            'days_before' => $this->daysBefore
         ];
     }
 }

@@ -33,6 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         //毎朝午前９時に期限通知を送信
         $schedule->command('app:send-deadline-notifications')->dailyAt('09:00');
+
+        //毎週月曜日の09:00に週次レポートを送信
+        $schedule->command('notifications:send-weekly-reports')->weeklyOn(1, '09:00');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
