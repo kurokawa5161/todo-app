@@ -65,7 +65,8 @@ class TodoController extends Controller
                 $query->orderBy('end_date', 'asc');
                 break;
         }
-        $items = $query->paginate(5);
+        $perPage = $request->input('per_page', 10);
+        $items = $query->paginate($perPage)->appends($request->except('page'));
 
         //カテゴリ
         $categories = Cache::remember('user_' . auth()->id() . '_categories', 3600, function () {

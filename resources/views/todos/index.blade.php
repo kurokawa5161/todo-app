@@ -123,6 +123,15 @@
                             <input type="date" name="date_to" value="{{ request('date_to') }}"
                                 class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500">
                         </div>
+
+                        {{-- 表示件数選択 --}}
+                        <select name="per_page" onchange="this.form.submit()"
+                            class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="5" {{ request('per_page') == 5 ? 'selected' : '' }}>5件</option>
+                            <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10件</option>
+                            <option value="20" {{ request('per_page') == 20 ? 'selected' : '' }}>20件</option>
+                            <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50件</option>
+                        </select>
                     </div>
                 </form>
 
@@ -150,7 +159,6 @@
                         </button>
                     </form>
                 @endif
-
 
                 {{-- タスク一覧 --}}
                 <ul id="todos-list" class="space-y-2 mb-6">
