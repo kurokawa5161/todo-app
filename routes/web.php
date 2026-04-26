@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\CategoryController;
@@ -131,6 +132,10 @@ Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
     //チームのメンバーの権限を変更する
     Route::patch('/{team}/members/{user}/role', [TeamController::class, 'updateRole'])->name('members.role');
 });
+
+
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])
+    ->middleware('throttle:login');
 
 
 // ========================================

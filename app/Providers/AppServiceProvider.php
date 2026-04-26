@@ -70,5 +70,19 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        //レート制限の定義
+        RateLimiter::for('login', function (Request $request) {
+            return Limit::perMinute(5)->by($request->email . $request->ip());
+        });
+
+        //より厳しい制限（認証系）
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
+        RateLimiter::for('password-reset', function (Request $request) {
+            return Limit::perMinute(3)->by($request->email . $request->ip());
+        });
     }
 }

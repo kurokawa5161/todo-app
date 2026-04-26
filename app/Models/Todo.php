@@ -20,7 +20,8 @@ class Todo extends Model
         'parent_id',
         'is_pinned',
         'image_path',
-        'team_id'
+        'team_id',
+        'github_issue_url'
     ];
 
     protected $casts = [

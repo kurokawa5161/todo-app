@@ -30,7 +30,13 @@ class TodoRequest extends FormRequest
             'category_id' => 'nullable|integer|exists:categories,id',
             'priority' => 'nullable|integer|between:1,3',
             'parent_id' => 'nullable|integer|exists:todos,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:1900',
+            'image' => [
+                'nullable',
+                'file',
+                'mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/webp',
+                'max:2048',
+                'dimensions:max_width=4000,max_height=4000',
+            ],
         ];
     }
 }
