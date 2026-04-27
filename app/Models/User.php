@@ -71,12 +71,12 @@ class User extends Authenticatable
 
     public function savedSearches()
     {
-        return $this->hasMany(savedSearch::class);
+        return $this->hasMany(SavedSearch::class);
     }
 
     public function apiLog()
     {
-        return $this->hasOne(apiLog::class);
+        return $this->hasOne(ApiLog::class);
     }
 
     public function teams()
