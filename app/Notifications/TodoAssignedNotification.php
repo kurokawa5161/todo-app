@@ -8,8 +8,9 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Todo;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class TodoAssignedNotification extends Notification implements ShouldQueue
 {
@@ -35,6 +36,11 @@ class TodoAssignedNotification extends Notification implements ShouldQueue
         //ユーザーのメール通知設定の確認
         if ($notifiable->notificationSetting?->task_assigned_enabled ?? true) {
             $channels[] = 'mail';
+        }
+
+        //プッシュ通知
+        if ($notifiable->notificationSetting?->push_enabled ?? true) {
+            $channels[] = WebPushChannel::class;
         }
 
         return $channels;
@@ -85,5 +91,18 @@ class TodoAssignedNotification extends Notification implements ShouldQueue
             'todo_title' => $this->todo->title,
             'message' => "{$this->assignedBy->name}さんからタスクが割り当てられました"
         ]);
+    }
+
+    public function toWebPush(object $notifiable): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title('新しいタスクが割り当てられました')
+            ->body("{$this->assignedBy->name}さんがタスク「{$this->todo->title}」を割り当てました")
+            ->icon('/favicon.ico')
+            ->data([
+                'todo_id' => $this->todo->id,
+                'url' => route('todos.edit', $this->todo)
+            ])
+            ->tag('todo-assigned-' . $this->todo->id);
     }
 }

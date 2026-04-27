@@ -66,4 +66,57 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * 通知設定画面を表示
+     */
+    public function editNotifications(Request $request)
+    {
+        $setting = $request->user()->notificationSetting;
+
+        // NotificationSettingが存在しない場合は作成
+        if (!$setting) {
+            $setting = $request->user()->notificationSetting()->create([
+                'reminder_days' => [1, 3, 7],
+                'weekly_report_enabled' => true,
+                'task_assigned_enabled' => true,
+                'comment_email_enabled' => true,
+                'push_enabled' => true,
+                'weekly_report_day' => 'monday',
+                'weekly_report_time' => '09:00',
+            ]);
+        }
+
+        return view('profile.notifications', [
+            'user' => $request->user(),
+            'setting' => $setting,
+        ]);
+    }
+
+    /**
+     * 通知設定を更新
+     */
+    public function updateNotifications(Request $request)
+    {
+        $validated = $request->validate([
+            'push_enabled' => 'boolean',
+            'task_assigned_enabled' => 'boolean',
+            'comment_email_enabled' => 'boolean',
+            'weekly_report_enabled' => 'boolean',
+        ]);
+
+        $setting = $request->user()->notificationSetting;
+
+        if ($setting) {
+            $setting->update([
+                'push_enabled' => $request->has('push_enabled'),
+                'task_assigned_enabled' => $request->has('task_assigned_enabled'),
+                'comment_email_enabled' => $request->has('comment_email_enabled'),
+                'weekly_report_enabled' => $request->has('weekly_report_enabled'),
+            ]);
+        }
+
+        return redirect()->route('profile.notifications.edit')
+            ->with('status', 'notifications-updated');
+    }
 }

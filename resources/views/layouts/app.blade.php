@@ -15,6 +15,18 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- テーマカラー -->
+    <meta name="theme-color" content="#4f46e5">
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/favicon.ico">
+
+    <!-- VAPID公開鍵 -->
+    <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>

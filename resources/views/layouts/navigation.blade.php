@@ -27,6 +27,9 @@
                     <x-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
                         🏷️ タグ
                     </x-nav-link>
+                    <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')">
+                        ⚙️ 設定
+                    </x-nav-link>
                     @if(app()->environment('local') || auth()->user()->email === 'kurokawa@gmail.com')
                     <x-nav-link :href="route('dev.database')" :active="request()->routeIs('dev.database')">
                         🗄️ Database
@@ -119,6 +122,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
                 🏷️ タグ
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')">
+                ⚙️ 設定
             </x-responsive-nav-link>
             @if(app()->environment('local') || auth()->user()->email === 'kurokawa@gmail.com')
             <x-responsive-nav-link :href="route('dev.database')" :active="request()->routeIs('dev.database')">

@@ -11,6 +11,7 @@ use App\Http\Controllers\SavedSearchController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\GitHubWebhookController;
+use App\Http\Controllers\PushSubscriptionController;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\TodoDeadlineNotification;
 use App\Models\Todo;
@@ -58,6 +59,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/reminder', [ProfileController::class, 'updateReminder'])->name('profile.reminder');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    //通知設定
+    Route::get('/profile/notifications', [ProfileController::class, 'editNotifications'])->name('profile.notifications.edit');
+    Route::patch('/profile/notifications', [ProfileController::class, 'updateNotifications'])->name('profile.notifications.update');
+
     //エクスポート
     Route::get('/dashboard/export/csv', [DashboardController::class, 'exportCsv'])->name('dashboard.export.csv');
     Route::get('/dashboard/export/pdf/weekly', [DashboardController::class, 'exportWeeklyPdf'])->name('dashboard.export.pdf.weekly');
@@ -70,6 +75,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/unread-count', function () {
         return response()->json(['count' => auth()->user()->unreadNotifications->count()]);
     });
+
+    //プッシュ通知
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 });
 
 require __DIR__ . '/auth.php';

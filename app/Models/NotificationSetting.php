@@ -12,6 +12,7 @@ class NotificationSetting extends Model
         'weekly_report_enabled',
         'task_assigned_enabled',
         'comment_email_enabled',
+        'push_enabled',
         'weekly_report_day',
         'weekly_report_time',
     ];
@@ -20,7 +21,8 @@ class NotificationSetting extends Model
         'reminder_days' => 'array',
         'weekly_report_enabled' => 'boolean',
         'task_assigned_enabled' => 'boolean',
-        'comment_email_enabled' => 'boolean'
+        'comment_email_enabled' => 'boolean',
+        'push_enabled' => 'boolean'
     ];
 
     protected $attributes = [

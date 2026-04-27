@@ -14,6 +14,8 @@ use App\Models\Comment;
 use App\Models\SavedSearch;
 use App\Models\Tag;
 use App\Models\Category;
+use App\Models\User;
+use App\Observers\UserObserver;
 use App\Policies\TodoPolicy;
 use App\Policies\SavedSearchPolicy;
 use App\Policies\TagPolicy;
@@ -84,5 +86,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-reset', function (Request $request) {
             return Limit::perMinute(3)->by($request->email . $request->ip());
         });
+
+        User::observe(UserObserver::class);
     }
 }

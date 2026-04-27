@@ -232,4 +232,91 @@ document.addEventListener('DOMContentLoaded', function () {
         return text.replace(/[&<>"']/g, m => map[m]);
     }
 
+    // Service Worker登録
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker
+                .register('/service-worker.js')
+                .then((registration) => {
+                    console.log('✅ Service Worker registered:', registration);
+                })
+                .catch((error) => {
+                    console.error('❌ Service Worker registration failed:', error);
+                });
+        });
+    }
+
+    // プッシュ通知購読
+    async function subscribeToPush() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.warn('⚠️ Push notifications not supported');
+            return;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]').content;
+
+            // 既存の購読を確認
+            let subscription = await registration.pushManager.getSubscription();
+
+            if (!subscription) {
+                // 新規購読
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+                });
+
+                // サーバーに購読情報を送信
+                await fetch('/push-subscriptions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify(subscription),
+                });
+
+                console.log('✅ Push subscription created');
+            }
+        } catch (error) {
+            console.error('❌ Push subscription failed:', error);
+        }
+    }
+
+    // VAPID鍵変換ヘルパー
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    // 通知権限リクエスト
+    async function requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            console.warn('⚠️ This browser does not support notifications');
+            return;
+        }
+
+        if (Notification.permission === 'default') {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                await subscribeToPush();
+            }
+        } else if (Notification.permission === 'granted') {
+            await subscribeToPush();
+        }
+    }
+
+    // ページロード時に実行（ログインユーザーのみ）
+    if (document.querySelector('meta[name="vapid-public-key"]')) {
+        requestNotificationPermission();
+    }
+
 });
