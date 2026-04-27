@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')
                 ->constrained()
                 ->cascadeOnDelete();
-            $table->json('reminder_days')->default('[3]');
+            $table->json('reminder_days')->nullable();
             $table->boolean('weekly_report_enabled')->default(true);
             $table->boolean('task_assigned_enabled')->default(true);
             $table->boolean('comment_email_enabled')->default(true);

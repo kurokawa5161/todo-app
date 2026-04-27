@@ -9,9 +9,9 @@ class NotificationSetting extends Model
     protected $fillable = [
         'user_id',
         'reminder_days',
-        'weekly_report_enable',
-        'task_assigned_enable',
-        'comment_email_enable',
+        'weekly_report_enabled',
+        'task_assigned_enabled',
+        'comment_email_enabled',
         'weekly_report_day',
         'weekly_report_time',
     ];
@@ -21,6 +21,15 @@ class NotificationSetting extends Model
         'weekly_report_enabled' => 'boolean',
         'task_assigned_enabled' => 'boolean',
         'comment_email_enabled' => 'boolean'
+    ];
+
+    protected $attributes = [
+        'reminder_days' => '[3]',
+        'weekly_report_enabled' => true,
+        'task_assigned_enabled' => true,
+        'comment_email_enabled' => true,
+        'weekly_report_day' => 'monday',
+        'weekly_report_time' => '09:00',
     ];
 
     public function user()
