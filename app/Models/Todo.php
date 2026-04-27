@@ -21,7 +21,8 @@ class Todo extends Model
         'is_pinned',
         'image_path',
         'team_id',
-        'github_issue_url'
+        'github_issue_url',
+        //'assigned_to'
     ];
 
     protected $casts = [
@@ -67,6 +68,11 @@ class Todo extends Model
     public function team()
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function assignedUser()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     // ========================================

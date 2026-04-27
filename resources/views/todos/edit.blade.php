@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-12" data-todo-edit data-todo-id="{{ $item->id }}" data-user-name="{{ auth()->user()->name }}">
+    <div class="py-12" data-todo-edit data-todo-id="{{ $todo->id }}" data-user-name="{{ auth()->user()->name }}">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
 
@@ -27,7 +27,7 @@
                 @endif
 
                 {{-- 編集フォーム --}}
-                <form action="{{ route('todos.update', $item->id) }}" method="POST"
+                <form action="{{ route('todos.update', $todo->id) }}" method="POST"
                     class="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
@@ -41,7 +41,7 @@
                             <option value="">（なし）</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}"
-                                    {{ old('category_id', $item->category_id) == $category->id ? 'selected' : '' }}>
+                                    {{ old('category_id', $todo->category_id) == $category->id ? 'selected' : '' }}>
                                     {{ $category->name }}
                                 </option>
                             @endforeach
@@ -52,13 +52,13 @@
                         <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">優先度</label>
                         <select name="priority"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                            <option value="1" {{ old('priority', $item->priority) == 1 ? 'selected' : '' }}>
+                            <option value="1" {{ old('priority', $todo->priority) == 1 ? 'selected' : '' }}>
                                 高
                             </option>
-                            <option value="2" {{ old('priority', $item->priority) == 2 ? 'selected' : '' }}>
+                            <option value="2" {{ old('priority', $todo->priority) == 2 ? 'selected' : '' }}>
                                 中
                             </option>
-                            <option value="3" {{ old('priority', $item->priority) == 3 ? 'selected' : '' }}>
+                            <option value="3" {{ old('priority', $todo->priority) == 3 ? 'selected' : '' }}>
                                 低
                             </option>
                         </select>
@@ -66,33 +66,33 @@
 
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">タイトル</label>
-                        <input type="text" name="title" value="{{ old('title', $item->title) }}"
+                        <input type="text" name="title" value="{{ old('title', $todo->title) }}"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">内容</label>
-                        <input type="text" name="content" value="{{ old('content', $item->content) }}"
+                        <input type="text" name="content" value="{{ old('content', $todo->content) }}"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400">
                     </div>
                     <div class="flex gap-3">
                         <div class="flex-1">
                             <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">開始日</label>
                             <input type="date" name="start_date"
-                                value="{{ old('start_date', $item->start_date?->format('Y-m-d')) }}"
+                                value="{{ old('start_date', $todo->start_date?->format('Y-m-d')) }}"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                         </div>
                         <div class="flex-1">
                             <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">終了日</label>
                             <input type="date" name="end_date"
-                                value="{{ old('end_date', $item->end_date->format('Y-m-d')) }}"
+                                value="{{ old('end_date', $todo->end_date?->format('Y-m-d')) }}"
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">画像</label>
-                        @if ($item->image_path)
+                        @if ($todo->image_path)
                             <div class="mb-2">
-                                <img src="{{ asset('storage/' . $item->image_path) }}" class="max-w-xs rounded">
+                                <img src="{{ asset('storage/' . $todo->image_path) }}" class="max-w-xs rounded">
                             </div>
                         @endif
                         <input type="file" name="image" accept="image/*"
@@ -118,7 +118,7 @@
                                     };
 
                                     // このTodoに付いているタグかチェック
-                                    $isChecked = $item->tags->contains($tag->id);
+                                    $isChecked = $todo->tags->contains($tag->id);
                                 @endphp
 
                                 <label class="flex items-center gap-1 cursor-pointer">
@@ -142,6 +142,22 @@
                             @endif
                         </div>
                     </div>
+
+                    <!-- 担当者選択 -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">担当者</label>
+                        <select name="assigned_to" id="assigned_to"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                            <option value="">未割り当て</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}"
+                                    {{ old('assigned_to', $todo->assigned_to) == $user->id ? 'selected' : '' }}>
+                                    {{ $user->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <button type="submit"
                         class="w-full py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded font-medium transition">
                         更新
@@ -150,7 +166,7 @@
 
                 {{-- アクションボタン --}}
                 <div class="mt-4 flex gap-3">
-                    <a href="{{ route('todos.export-calendar', $item) }}"
+                    <a href="{{ route('todos.export-calendar', $todo) }}"
                         class="flex-1 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded font-medium transition text-center">
                         📅 カレンダーにエクスポート
                     </a>
@@ -161,9 +177,9 @@
                     <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-gray-100">コメント</h2>
 
                     {{-- コメント一覧 --}}
-                    @if ($item->comments->count() > 0)
+                    @if ($todo->comments->count() > 0)
                         <ul class="space-y-2 mb-4">
-                            @foreach ($item->comments as $comment)
+                            @foreach ($todo->comments as $comment)
                                 <li
                                     class="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded">
                                     <div class="flex items-center justify-between mb-1">
@@ -197,7 +213,7 @@
                         style="display: none;"></div>
 
                     {{-- コメント投稿フォーム --}}
-                    <form action="{{ route('comments.store', $item->id) }}" method="POST">
+                    <form action="{{ route('comments.store', $todo->id) }}" method="POST">
                         @csrf
                         <textarea name="body" rows="3" placeholder="コメントを書く..."
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>

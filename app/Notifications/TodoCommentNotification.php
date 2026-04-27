@@ -31,7 +31,14 @@ class TodoCommentNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast'];
+        $channels =  ['database', 'broadcast'];
+
+        //ユーザーのメール通知設定を確認
+        if ($notifiable->notificationSetting?->comment_email_enabled ?? true) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toDatabase(object $notifiable): array
@@ -53,5 +60,17 @@ class TodoCommentNotification extends Notification implements ShouldQueue
             'todo_title' => $this->todo->title,
             'message' => "{$this->comment->user->name} があなたのTodo「{$this->todo->title}」にコメントしました",
         ]);
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject("コメント通知 - {$this->todo->title}")
+            ->greeting('こんにちは' . $notifiable->name . 'さん')
+            ->line("{$this->comment->user->name}さんがあなたのTodoにコメントしました")
+            ->line('')
+            ->line("**Todo**:{$this->todo->title}")
+            ->line("**コメント**:{$this->comment->body}")
+            ->action('Todoを確認', url('/todos/' . $this->todo->id));
     }
 }

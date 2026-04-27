@@ -37,6 +37,7 @@ class TodoRequest extends FormRequest
                 'max:2048',
                 'dimensions:max_width=4000,max_height=4000',
             ],
+            'assigned_to' => 'nullable|exists:users,id'
         ];
     }
 }

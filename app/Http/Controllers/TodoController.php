@@ -10,6 +10,7 @@ use App\Models\Comment;
 use App\Models\TodoTag;
 use App\Models\Category;
 use App\Models\Tag;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
 use App\Policies\TodoPolicy;
@@ -18,6 +19,7 @@ use App\Events\TodoUpdated;
 use App\Events\TodoDeleted;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\TodoSlackNotification;
+use App\Notifications\TodoAssignedNotification;
 use Eluceo\iCal\Domain\Entity\Calendar;
 use Eluceo\iCal\Domain\Entity\Event;
 use Eluceo\iCal\Domain\ValueObject\DateTime;
@@ -181,14 +183,17 @@ class TodoController extends Controller
             $tags = auth()->user()->tags()->orderBy('name', 'asc')->get();
         }
 
+        //ユーザー
+        $users = User::all();
+
         return view('todos.edit', [
-            'item' => $todo,
+            'todo' => $todo,
             'categories' => $categories,
             'tags' => $tags,
-            'team' => $team
+            'team' => $team,
+            'users' => $users
         ]);
     }
-
 
     public function update(TodoRequest $request, Todo $todo, ?Team $team = null)
     {
@@ -200,6 +205,19 @@ class TodoController extends Controller
         } else {
             //権限チェック
             $this->authorize('update', $todo);
+        }
+
+        //assigned_toが変更された場合に追加
+        if ($request->has('assigned_to') && $request->assigned_to != $todo->assigned_to) {
+            $todo->assigned_to = $request->assigned_to;
+
+            //新しく割り当てられたユーザーに追加
+            if ($request->assigned_to) {
+                $assignedUser = User::find($request->assigned_to);
+                if ($assignedUser) {
+                    $assignedUser->notify(new TodoAssignedNotification($todo, $request->user()));
+                }
+            }
         }
 
         $todo->title = $request->title;
