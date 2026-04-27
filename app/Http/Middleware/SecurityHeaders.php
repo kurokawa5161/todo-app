@@ -17,15 +17,17 @@ class SecurityHeaders
     {
         $response =  $next($request);
 
-        //Content Security policy
+        // Content Security Policy (開発環境対応)
+        $viteUrl = app()->environment('local') ? 'http://localhost:5173 http://127.0.0.1:5173' : '';
+
         $response->headers->set(
             'Content-Security-Policy',
             "default-src 'self';" .
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval';" .
-                "style-src 'self' 'unsafe-inline';" .
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' {$viteUrl} https://cdn.jsdelivr.net;" .
+                "style-src 'self' 'unsafe-inline' {$viteUrl} https://fonts.bunny.net;" .
                 "img-src 'self' data: https:;" .
-                "font-src 'self' data:;" .
-                "connect-src 'self' ws: wss;"
+                "font-src 'self' data: https://fonts.bunny.net;" .
+                "connect-src 'self' ws: wss: {$viteUrl} https://cdn.jsdelivr.net;"
         );
 
         // X-Content-Type-Options

@@ -27,6 +27,11 @@
                     <x-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
                         🏷️ タグ
                     </x-nav-link>
+                    @if(app()->environment('local') || auth()->user()->email === 'kurokawa@gmail.com')
+                    <x-nav-link :href="route('dev.database')" :active="request()->routeIs('dev.database')">
+                        🗄️ Database
+                    </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -115,6 +120,11 @@
             <x-responsive-nav-link :href="route('tags.index')" :active="request()->routeIs('tags.*')">
                 🏷️ タグ
             </x-responsive-nav-link>
+            @if(app()->environment('local') || auth()->user()->email === 'kurokawa@gmail.com')
+            <x-responsive-nav-link :href="route('dev.database')" :active="request()->routeIs('dev.database')">
+                🗄️ Database
+            </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

@@ -137,6 +137,43 @@ Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])
     ->middleware('throttle:login');
 
+// ========================================
+// データベース閲覧
+// ========================================
+Route::get('/dev/database', function () {
+    // 本番環境では認証必須
+    if (!auth()->check() && app()->environment('production')) {
+        return redirect()->route('login');
+    }
+
+    $driver = DB::getDriverName();
+
+    // テーブル一覧取得（ドライバー別）
+    if ($driver === 'sqlite') {
+        $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+    } else {
+        $tables = DB::select('SHOW TABLES');
+    }
+
+    $tableName = request('table');
+    $data = null;
+    $columns = null;
+
+    if ($tableName) {
+        $data = DB::table($tableName)->paginate(50);
+
+        // カラム情報取得（ドライバー別）
+        if ($driver === 'sqlite') {
+            $columns = DB::select("PRAGMA table_info({$tableName})");
+        } else {
+            $columns = DB::select("DESCRIBE {$tableName}");
+        }
+    }
+
+    return view('dev.database', compact('tables', 'tableName', 'data', 'columns', 'driver'));
+})->name('dev.database');
+
+
 
 // ========================================
 // デバッグ用ルート

@@ -11,6 +11,7 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
+        host: '127.0.0.1', // IPv4のみ使用（IPv6を無効化）
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },
