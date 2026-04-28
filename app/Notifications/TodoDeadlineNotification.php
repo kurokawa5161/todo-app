@@ -8,6 +8,8 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Todo;
 use Carbon\Carbon;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class TodoDeadlineNotification extends Notification implements ShouldQueue
 {
@@ -32,7 +34,19 @@ class TodoDeadlineNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        // TODO: broadcastはReverbサーバー起動後に有効化
+        $channels =  ['database'/*, 'broadcast'*/];
+
+        //ユーザーのメール通知設定の確認
+        // 締切通知は常に送信（reminder_daysで期限前の日数を管理）
+        $channels[] = 'mail';
+
+        //プッシュ通知
+        if ($notifiable->notificationSetting?->push_enabled ?? true) {
+            $channels[] = WebPushChannel::class;
+        }
+
+        return $channels;
     }
 
     /**
@@ -63,5 +77,18 @@ class TodoDeadlineNotification extends Notification implements ShouldQueue
             'end_date' => $this->todo->end_date,
             'days_before' => $this->daysBefore
         ];
+    }
+
+    public function toWebPush(object $notifiable): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title('Todoの期限が近づいています')
+            ->body("{$this->daysBefore}日後が期限のTodo「{$this->todo->title}」があります")
+            ->icon('/favicon.ico')
+            ->data([
+                'todo_id' => $this->todo->id,
+                'url' => route('todos.edit', $this->todo)
+            ])
+            ->tag('todo-deadline-' . $this->todo->id);
     }
 }

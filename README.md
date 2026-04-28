@@ -1,6 +1,6 @@
 # Laravel Todo App
 
-Laravel学習用のTodoアプリケーション。フェーズ19A完了（メール通知強化）。
+Laravel学習用のTodoアプリケーション。フェーズ19C完了（プッシュ通知完全実装・PWA対応）。
 
 ## 機能
 
@@ -50,9 +50,13 @@ Laravel学習用のTodoアプリケーション。フェーズ19A完了（メー
 ### 通知機能
 - ✅ 週次レポートメール自動送信
 - ✅ カスタマイズ可能なリマインダー（1日前・3日前・1週間前）
-- ✅ コメント通知（メール・データベース・ブロードキャスト）
-- ✅ タスク割り当て通知
-- ✅ 通知設定（ユーザーごとにON/OFF可能）
+- ✅ コメント通知（メール・データベース・ブロードキャスト・プッシュ）
+- ✅ タスク割り当て通知（メール・プッシュ）
+- ✅ 締切通知（メール・プッシュ）
+- ✅ ブラウザプッシュ通知（PWA対応）
+  - Chrome（FCM経由）
+  - Edge（WNS経由）
+- ✅ 通知設定UI（ユーザーごとにON/OFF可能）
 
 ## 技術スタック
 
@@ -63,6 +67,8 @@ Laravel学習用のTodoアプリケーション。フェーズ19A完了（メー
 - **CI/CD**: GitHub Actions
 - **Container**: Docker, Docker Compose
 - **WebSocket**: Laravel Reverb
+- **Push Notifications**: laravel-notification-channels/webpush
+- **PWA**: Service Worker, Web Push API
 - **Calendar**: eluceo/ical
 - **External APIs**: GitHub API, Slack（データベース保存）
 

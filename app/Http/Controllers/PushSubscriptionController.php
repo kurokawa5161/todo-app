@@ -18,11 +18,16 @@ class PushSubscriptionController extends Controller
             'keys.auth' => 'required|string'
         ]);
 
+        // Content Encoding: 最新のブラウザは "aes128gcm"、古いブラウザは "aesgcm"
+        // デフォルトは "aes128gcm"（Chrome 90+, Firefox 94+, Safari 16+）
+        $contentEncoding = 'aes128gcm';
+
         // laravel-notification-channels/webpushが自動で処理
         auth()->user()->updatePushSubscription(
             $validated['endpoint'],
             $validated['keys']['p256dh'],
             $validated['keys']['auth'],
+            $contentEncoding
         );
 
         Log::info('Push subscription created', [

@@ -31,7 +31,8 @@ class TodoAssignedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels =  ['database', 'broadcast'];
+        // TODO: broadcastはReverbサーバー起動後に有効化
+        $channels =  ['database'/*, 'broadcast'*/];
 
         //ユーザーのメール通知設定の確認
         if ($notifiable->notificationSetting?->task_assigned_enabled ?? true) {

@@ -9,6 +9,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class TodoCommentNotification extends Notification implements ShouldQueue
 {
@@ -31,11 +33,17 @@ class TodoCommentNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels =  ['database', 'broadcast'];
+        // TODO: broadcastはReverbサーバー起動後に有効化
+        $channels =  ['database'/*, 'broadcast'*/];
 
-        //ユーザーのメール通知設定を確認
+        //ユーザーのメール通知設定の確認
         if ($notifiable->notificationSetting?->comment_email_enabled ?? true) {
             $channels[] = 'mail';
+        }
+
+        //プッシュ通知
+        if ($notifiable->notificationSetting?->push_enabled ?? true) {
+            $channels[] = WebPushChannel::class;
         }
 
         return $channels;
@@ -72,5 +80,18 @@ class TodoCommentNotification extends Notification implements ShouldQueue
             ->line("**Todo**:{$this->todo->title}")
             ->line("**コメント**:{$this->comment->body}")
             ->action('Todoを確認', url('/todos/' . $this->todo->id));
+    }
+
+    public function toWebPush(object $notifiable): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title("新しいコメント")
+            ->body("{$this->comment->user->name}さんがTodo「{$this->todo->title}」にコメントしました")
+            ->icon('/favicon.ico')
+            ->data([
+                'todo_id' => $this->todo->id,
+                'url' => route('todos.edit', $this->todo)
+            ])
+            ->tag('todo-comment-' . $this->todo->id);
     }
 }

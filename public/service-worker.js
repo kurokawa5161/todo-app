@@ -1,11 +1,16 @@
 // Service Workerバージョン（更新時にインクリメント）
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.0.4';
 const CACHE_NAME = `todo-app-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `todo-app-runtime-${CACHE_VERSION}`;
 
-// キャッシュするリソース（存在するファイルのみ）
+// 静的リソース（プリキャッシュ）
 const urlsToCache = [
-  '/favicon.ico',
+  '/manifest.json',
+  '/icons/icon.svg',
 ];
+
+// キャッシュ対象のファイルパターン
+const CACHEABLE_EXTENSIONS = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico'];
 
 // インストール時：キャッシュ作成
 self.addEventListener('install', (event) => {
@@ -23,7 +28,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => name !== CACHE_NAME && name !== RUNTIME_CACHE)
           .map((name) => caches.delete(name))
       );
     })
@@ -31,11 +36,41 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch時：キャッシュファースト戦略
+// Fetch時：キャッシュファースト戦略 + 動的キャッシュ
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // 同一オリジンのGETリクエストのみキャッシュ
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) {
+    return;
+  }
+
+  // キャッシュ対象の拡張子チェック
+  const isCacheable = CACHEABLE_EXTENSIONS.some(ext => url.pathname.endsWith(ext));
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      // ネットワークから取得
+      return fetch(event.request).then((response) => {
+        // 有効なレスポンスかチェック
+        if (!response || response.status !== 200 || response.type === 'error') {
+          return response;
+        }
+
+        // キャッシュ対象の場合、動的にキャッシュに追加
+        if (isCacheable) {
+          const responseToCache = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+
+        return response;
+      });
     })
   );
 });
@@ -43,6 +78,7 @@ self.addEventListener('fetch', (event) => {
 // プッシュ通知受信時
 self.addEventListener('push', (event) => {
   if (!event.data) {
+    console.warn('[Service Worker] Push event has no data');
     return;
   }
 

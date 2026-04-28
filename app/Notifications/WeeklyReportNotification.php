@@ -6,8 +6,10 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
-class WeeklyReportNotification extends Notification
+class WeeklyReportNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -23,7 +25,20 @@ class WeeklyReportNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        // TODO: broadcastはReverbサーバー起動後に有効化
+        $channels =  ['database'/*, 'broadcast'*/];
+
+        //ユーザーのメール通知設定の確認
+        if ($notifiable->notificationSetting?->weekly_report_enabled ?? true) {
+            $channels[] = 'mail';
+        }
+
+        //プッシュ通知
+        if ($notifiable->notificationSetting?->push_enabled ?? true) {
+            $channels[] = WebPushChannel::class;
+        }
+
+        return $channels;
     }
 
     /**
@@ -52,6 +67,18 @@ class WeeklyReportNotification extends Notification
             }
         }
         return $message->action('Todoを確認する', url('todos'));
+    }
+
+    public function toWebPush(object $notifiable): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title('週次レポート - ' . now()->format('Y年m月d日'))
+            ->body("完了：{$this->stats['completed']}件、未完了：{$this->stats['pending']}件、今週期限：{$this->stats['upcoming']}件")
+            ->icon('/favicon.ico')
+            ->data([
+                'url' => route('todos.index')
+            ])
+            ->tag('weekly-report');
     }
 
     /**

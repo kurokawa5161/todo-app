@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 背景 -->
+  <rect width="512" height="512" fill="#4f46e5" rx="64"/>
+
+  <!-- チェックマーク -->
+  <path d="M 128 256 L 224 352 L 384 160"
+        fill="none"
+        stroke="white"
+        stroke-width="48"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- リスト線 -->
+  <line x1="96" y1="128" x2="320" y2="128" stroke="white" stroke-width="24" stroke-linecap="round"/>
+  <line x1="96" y1="256" x2="160" y2="256" stroke="white" stroke-width="24" stroke-linecap="round"/>
+  <line x1="96" y1="384" x2="280" y2="384" stroke="white" stroke-width="24" stroke-linecap="round"/>
+</svg>
