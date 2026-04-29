@@ -11,6 +11,7 @@ use App\Models\TodoTag;
 use App\Models\Category;
 use App\Models\Tag;
 use App\Models\User;
+use App\Models\SearchHistory;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
 use App\Policies\TodoPolicy;
@@ -102,6 +103,16 @@ class TodoController extends Controller
             );
 
             $items->load(['category', 'children', 'tags']);
+
+            //検索履歴を保存（空でない場合のみ）
+            $keyword = trim($request->q);
+            if ($keyword) {
+                SearchHistory::create([
+                    'user_id' => $user->id,
+                    'keyword' => $keyword,
+                    'result_count' => $items->total()
+                ]);
+            }
         } else {
             $query = $user->todos()->whereNull('parent_id')->with(['category', 'children', 'tags']);
 
@@ -163,6 +174,10 @@ class TodoController extends Controller
             COUNT(CASE WHEN completed_at IS NOT NULL THEN 1 END) as done'
         )->whereNull('parent_id')->first();
 
+        //検索履歴
+        $recentSearches = SearchHistory::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')->limit(10)->get();
+
         $data = [
             'items' => $items,
             'filter' => $request->filter,
@@ -170,9 +185,29 @@ class TodoController extends Controller
             'sort' => $request->sort,
             'counts' => $counts,
             'tags' => $tags,
-            'savedSearches' => $savedSearches
+            'savedSearches' => $savedSearches,
+            'recentSearches' => $recentSearches
         ];
+
         return view('todos.index', $data);
+    }
+
+    public function suggest(Request $request)
+    {
+        $query = $request->input('q', '');
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $suggestions = SearchHistory::where('user_id', auth()->id())
+            ->where('keyword', 'like', $query . '%')
+            ->select('keyword')
+            ->distinct()
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->pluck('keyword');
+
+        return response()->json($suggestions);
     }
 
     public function store(TodoRequest $request, ?Team $team = null)

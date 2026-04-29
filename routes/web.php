@@ -40,6 +40,8 @@ Route::prefix('todos')->name('todos.')->middleware('auth')->group(function () {
     Route::patch('/{todo}/toggle', [TodoController::class, 'toggle'])->name('toggle');
     Route::delete('/{todo}', [TodoController::class, 'destroy'])->name('destroy');
     Route::patch('/{todo}/pin', [TodoController::class, 'togglePin'])->name('pin');
+    //サジェスト
+    Route::get('/suggest', [TodoController::class, 'suggest'])->name('suggest');
 });
 
 // ========================================

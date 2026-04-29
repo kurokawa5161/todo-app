@@ -60,14 +60,91 @@
                     <input type="hidden" name="filter" value="{{ $filter }}">
 
                     {{-- 検索欄（タイトル・内容） --}}
-                    <div class="flex gap-2">
-                        <input type="text" name="q" value="{{ request('q') }}" placeholder="🔍 タイトルや内容で検索"
-                            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500">
+                    <div class="flex gap-2 relative">
+                        <div class="flex-1 relative">
+                            <input type="text" id="search-input" name="q" value="{{ request('q') }}"
+                                placeholder="🔍 タイトルや内容で検索" autocomplete="off"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500">
+
+                            {{-- サジェストドロップダウン --}}
+                            <div id="suggestions"
+                                class="hidden absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-lg max-h-60 overflow-y-auto">
+                            </div>
+                        </div>
                         <button type="submit"
                             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded transition">
                             検索
                         </button>
                     </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const searchInput = document.getElementById('search-input');
+                            const suggestionsDiv = document.getElementById('suggestions');
+                            let debounceTimer;
+
+                            searchInput.addEventListener('input', function() {
+                                clearTimeout(debounceTimer);
+                                const query = this.value.trim();
+
+                                if (query.length < 2) {
+                                    suggestionsDiv.classList.add('hidden');
+                                    return;
+                                }
+
+                                debounceTimer = setTimeout(() => {
+                                    fetch(`{{ route('todos.suggest') }}?q=${encodeURIComponent(query)}`)
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.length === 0) {
+                                                suggestionsDiv.classList.add('hidden');
+                                                return;
+                                            }
+
+                                            suggestionsDiv.innerHTML = data.map(keyword => `
+                        <div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer text-gray-900 dark:text-gray-100 suggestion-item"
+                             data-keyword="${keyword}">
+                            ${keyword}
+                        </div>
+                    `).join('');
+
+                                            suggestionsDiv.classList.remove('hidden');
+
+                                            // クリックイベント
+                                            document.querySelectorAll('.suggestion-item').forEach(item => {
+                                                item.addEventListener('click', function() {
+                                                    searchInput.value = this.dataset.keyword;
+                                                    suggestionsDiv.classList.add('hidden');
+                                                    searchInput.form.submit();
+                                                });
+                                            });
+                                        });
+                                }, 300);
+                            });
+
+                            // 外側クリックで閉じる
+                            document.addEventListener('click', function(e) {
+                                if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                                    suggestionsDiv.classList.add('hidden');
+                                }
+                            });
+                        });
+                    </script>
+
+                    {{-- 検索履歴 --}}
+                    @if (request('q') === null && $recentSearches->count() > 0)
+                        <div class="flex flex-wrap gap-2 items-center text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">🕒 最近の検索:</span>
+                            @foreach ($recentSearches as $search)
+                                <a href="{{ route('todos.index', ['q' => $search->keyword, 'filter' => $filter]) }}"
+                                    class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                                    {{ $search->keyword }}
+                                    <span
+                                        class="text-xs text-gray-500 dark:text-gray-500">({{ $search->result_count }}件)</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
 
                     {{-- フィルター行 --}}
                     <div class="flex gap-2 items-center flex-wrap">
