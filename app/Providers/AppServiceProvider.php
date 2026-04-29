@@ -37,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Scout設定：本番環境ではデータベース検索を使用
+        if (app()->environment('production') && !config('scout.driver')) {
+            config(['scout.driver' => 'database']);
+        }
+
         //Policy 登録
         Gate::policy(Todo::class, TodoPolicy::class);
         Gate::policy(SavedSearch::class, SavedSearchPolicy::class);

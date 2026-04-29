@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'driver' => env('SCOUT_DRIVER', app()->environment('production') ? 'database' : 'collection'),
+    'driver' => env('SCOUT_DRIVER', 'collection'),
 
     /*
     |--------------------------------------------------------------------------
