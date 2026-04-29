@@ -7,11 +7,25 @@ use Illuminate\Support\Facades\Response;
 use App\Models\Todo;
 use App\Models\Category;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        $userId = auth()->id();
+        //統計データは１時間キャッシュ
+        $weeklyData = Cache::remember("weekly_data_{$userId}", 3600, function () {
+            return $this->getWeeklyCompletionData();
+        });
+        $monthlyData = Cache::remember("monthly_data_{$userId}", 3600, function () {
+            return $this->getMonthlyCompletionData();
+        });
+        $yearlyData = Cache::remember("yearly_data_{$userId}", 3600, function () {
+            return $this->getYearlyCompletionData();
+        });
+
         //総Todo数、完了数、未完了数
         $total = Todo::where('user_id', auth()->id())->count();
         $done = Todo::where('user_id', auth()->id())->whereNotNull('completed_at')->count();
@@ -115,14 +129,17 @@ class DashboardController extends Controller
         $priorities = array();
         $priorityTotals = Todo::selectRaw('priority, count(*) as total')
             ->where('user_id', auth()->id())
+            ->whereNotNull('priority')
             ->groupBy('priority')->get();
         $priorityDones =  Todo::selectRaw('priority, count(*) as done')
             ->where('user_id', auth()->id())
+            ->whereNotNull('priority')
             ->whereNotNull('completed_at')
             ->groupBy('priority')
             ->pluck('done', 'priority'); // priority をキーにした配列
         $priorityActives = Todo::selectRaw('priority, count(*) as active')
             ->where('user_id', auth()->id())
+            ->whereNotNull('priority')
             ->whereNull('completed_at')
             ->groupBy('priority')
             ->pluck('active', 'priority'); // priority をキーにした配列
@@ -165,6 +182,9 @@ class DashboardController extends Controller
             'categories' => $categories,
             'tags' => $tags,
             'priorities' => $priorities,
+            'weeklyData' => $weeklyData,
+            'monthlyData' => $monthlyData,
+            'yearlyData' => $yearlyData,
         ];
 
         return view('dashboard', $result);
@@ -249,5 +269,90 @@ class DashboardController extends Controller
         ];
         $pdf = Pdf::loadView('reports.monthly', $data);
         return $pdf->download('monthly_report_' . date('YmdHis') . '.pdf');
+    }
+
+    //週次データ取得
+    private function getWeeklyCompletionData()
+    {
+        $weeklyData = [];
+        // 過去4週間の週次完了数
+        for ($i = 3; $i >= 0; $i--) {
+            $start = now()->subWeeks($i)->startOfWeek();
+            $end = now()->subWeeks($i)->endOfWeek();
+
+            $count = Todo::where('user_id', auth()->id())
+                ->whereNotNull('completed_at')
+                ->whereBetween('completed_at', [$start, $end])
+                ->count();
+
+            $total = Todo::where('user_id', auth()->id())
+                ->whereBetween('end_date', [$start, $end])
+                ->count();
+
+            $weeklyData[] = [
+                'label' => '第' . (4 - $i) . '週',
+                'count' => $count,
+                'total' => $total,
+                'rate' => $total > 0 ? round($count / $total * 100, 1) : 0
+            ];
+        }
+        return $weeklyData;
+    }
+
+    //月次データ取得
+    private function getMonthlyCompletionData()
+    {
+        $monthlyData = [];
+        // 過去6ヶ月の月次完了数
+        for ($i = 5; $i >= 0; $i--) {
+            $start = now()->subMonths($i)->startOfMonth();
+            $end = now()->subMonths()->endOfMonth($i);
+
+            $count = Todo::where('user_id', auth()->id())
+                ->whereNotNull('completed_at')
+                ->whereBetween('completed_at', [$start, $end])
+                ->count();
+
+            $total = Todo::where('user_id', auth()->id())
+                ->whereBetween('end_date', [$start, $end])
+                ->count();
+
+            $monthlyData[] = [
+                'label' => $start->format('Y-m'),
+                'count' => $count,
+                'total' => $total,
+                'rate' => $total > 0 ? round($count / $total * 100, 1) : 0
+
+            ];
+        }
+        return $monthlyData;
+    }
+
+    //年間データ取得
+    private function getYearlyCompletionData()
+    {
+        $yearlyData = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $start = now()->subMonths($i)->startOfMonth();
+            $end = now()->subMonths($i)->endOfMonth();
+
+            $count = Todo::where('user_id', auth()->id())
+                ->whereNotNull('completed_at')
+                ->whereBetween('completed_at', [$start, $end])
+                ->count();
+
+            $total = Todo::where('user_id', auth()->id())
+                ->whereBetween('end_date', [$start, $end])
+                ->count();
+
+            $yearlyData[] = [
+                'label' => $start->format('Y-m'),
+                'count' => $count,
+                'total' => $total,
+                'rate' => $total > 0 ? round($count / $total * 100, 1) : 0
+
+            ];
+        }
+        return $yearlyData;
     }
 }

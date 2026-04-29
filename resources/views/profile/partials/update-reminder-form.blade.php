@@ -17,7 +17,7 @@
             <x-input-label for="reminder_days_before" :value="__('通知設定')" />
 
             <select id="reminder_days_before" name="reminder_days_before"
-                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500">
                 <option value="">通知しない</option>
                 <option value="1"
                     {{ old('reminder_days_before', $user->reminder_days_before) == 1 ? 'selected' : '' }}>1日前</option>
