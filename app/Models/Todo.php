@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Scout\Searchable;
 
 class Todo extends Model
 {
     use HasFactory;
+    use Searchable;
 
     protected $fillable = [
         'title',
@@ -76,10 +78,40 @@ class Todo extends Model
     }
 
     // ========================================
+    // Scout設定
+    // ========================================
+
+    /**
+     * インデックス可能なモデルのデータ配列を取得
+     */
+    public function toSearchableArray()
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'content' => $this->content,
+            'category_id' => $this->category_id,
+            'priority' => $this->priority,
+            'completed_at' => $this->completed_at?->timestamp,
+            'user_id' => $this->user_id,
+            'end_date' => $this->end_date?->timestamp,
+            'created_at' => $this->created_at?->timestamp,
+        ];
+    }
+
+    /**
+     * インデックス名をカスタマイズ
+     */
+    public function searchableAs()
+    {
+        return 'todos';
+    }
+
+    // ========================================
     // スコープ（検索・絞り込み用）
     // ========================================
     /**
-     * タイトル・内容検索
+     * タイトル・内容検索（Scout使用）
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @param string|null $keyword
@@ -88,13 +120,19 @@ class Todo extends Model
     public function scopeSearch($query, $keyword)
     {
         if ($keyword) {
-            return $query->where(function ($query) use ($keyword) {
-                $query->where('title', 'like', '%' . $keyword . '%')
-                    ->orWhere('content', 'like', '%' . $keyword . '%');
-            });
-        } else {
-            return $query;
+            $searchResults = self::search($keyword)
+                ->get()
+                ->where('user_id', auth()->id())
+                ->pluck('id')
+                ->toArray();
+
+            if (empty($searchResults)) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereIn('id', $searchResults);
         }
+        return $query;
     }
 
     /**

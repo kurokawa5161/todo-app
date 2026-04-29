@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Meilisearch
+meilisearch.exe
+data.ms/

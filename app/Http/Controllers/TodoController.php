@@ -26,49 +26,120 @@ use Eluceo\iCal\Domain\ValueObject\DateTime;
 use Eluceo\iCal\Domain\ValueObject\TimeSpan;
 use Eluceo\iCal\Presentation\Factory\CalendarFactory;
 use App\Services\GitHubService;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class TodoController extends Controller
 {
 
     public function index(Request $request)
     {
-        $query = auth()->user()->todos()->whereNull('parent_id')->with(['category', 'children', 'tags']);
+        $user = auth()->user();
 
-        // ========================================
-        // 絞り込み条件
-        // ========================================
-        $query->completedFilter($request->filter)
-            ->search($request->q)
-            ->category($request->category_id)
-            ->priority($request->priority)
-            ->dateRange($request->date_from, $request->date_to);
+        //検索キーワードがある場合はScout検索
+        if ($request->q) {
+            $searchQuery = Todo::search($request->q);
 
-        // ========================================
-        // 並び替え
-        // ========================================
-        $query->orderBy('is_pinned', 'desc');
-        switch ($request->sort) {
-            case 'end_date_asc':
-                $query->orderBy('end_date', 'asc');
-                break;
-            case 'end_date_desc':
-                $query->orderBy('end_date', 'desc');
-                break;
-            case 'created_at_desc':
-                $query->orderBy('created_at', 'desc');
-                break;
-            case 'priority_asc':
-                $query->orderBy('priority', 'asc');
-                break;
-            case 'title_asc':
-                $query->orderBy('title', 'asc');
-                break;
-            default:
-                $query->orderBy('end_date', 'asc');
-                break;
+            //フィルター適用
+            if ($request->category_id) {
+                $searchQuery->where('category_id', $request->category_id);
+            }
+
+            if ($request->priority) {
+                $searchQuery->where('priority', $request->priority);
+            }
+
+            //ソート
+            switch ($request->sort) {
+                case 'end_date_asc':
+                    $searchQuery->orderBy('end_date', 'asc');
+                    break;
+                case 'end_date_desc':
+                    $searchQuery->orderBy('end_date', 'desc');
+                    break;
+                case 'created_at_desc':
+                    $searchQuery->orderBy('created_at', 'desc');
+                    break;
+                case 'priority_asc':
+                    $searchQuery->orderBy('priority', 'asc');
+                    break;
+                case 'title_asc':
+                    $searchQuery->orderBy('title', 'asc');
+                    break;
+            }
+
+            //検索結果を取得
+            $searchResults = $searchQuery->get();
+
+            //ユーザーフィルター（検索結果から絞り込み）
+            $searchResults = $searchResults->where('user_id', $user->id);
+
+            //期間
+            if ($request->date_from) {
+                $searchResults = $searchResults->filter(function ($todo) use ($request) {
+                    return $todo->end_date >= $request->date_from;
+                });
+            }
+            if ($request->date_to) {
+                $searchResults = $searchResults->filter(function ($todo) use ($request) {
+                    return $todo->end_date <= $request->date_to;
+                });
+            }
+
+            if ($request->filter === 'active') {
+                $searchResults = $searchResults->whereNull('completed_at');
+            } elseif ($request->filter === 'done') {
+                $searchResults = $searchResults->whereNotNull('completed_at');
+            }
+
+            $perPage = $request->input('per_page', 10);
+            $currentPage = request()->get('page', 1);
+            $items = new LengthAwarePaginator(
+                $searchResults->forPage($currentPage, $perPage),
+                $searchResults->count(),
+                $perPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+
+            $items->load(['category', 'children', 'tags']);
+        } else {
+            $query = $user->todos()->whereNull('parent_id')->with(['category', 'children', 'tags']);
+
+            // ========================================
+            // 絞り込み条件
+            // ========================================
+            $query->completedFilter($request->filter)
+                ->category($request->category_id)
+                ->priority($request->priority)
+                ->dateRange($request->date_from, $request->date_to);
+
+            // ========================================
+            // 並び替え
+            // ========================================
+            $query->orderBy('is_pinned', 'desc');
+            switch ($request->sort) {
+                case 'end_date_asc':
+                    $query->orderBy('end_date', 'asc');
+                    break;
+                case 'end_date_desc':
+                    $query->orderBy('end_date', 'desc');
+                    break;
+                case 'created_at_desc':
+                    $query->orderBy('created_at', 'desc');
+                    break;
+                case 'priority_asc':
+                    $query->orderBy('priority', 'asc');
+                    break;
+                case 'title_asc':
+                    $query->orderBy('title', 'asc');
+                    break;
+                default:
+                    $query->orderBy('end_date', 'asc');
+                    break;
+            }
+            $perPage = $request->input('per_page', 10);
+            $items = $query->paginate($perPage)->appends($request->except('page'));
         }
-        $perPage = $request->input('per_page', 10);
-        $items = $query->paginate($perPage)->appends($request->except('page'));
 
         //カテゴリ
         $categories = Cache::remember('user_' . auth()->id() . '_categories', 3600, function () {
@@ -335,11 +406,8 @@ class TodoController extends Controller
             $this->authorize('update', $todo);
         }
 
-        if ($todo->is_pinned) {
-            $todo->is_pinned = FALSE;
-        } else {
-            $todo->is_pinned = TRUE;
-        }
+        $todo->is_pinned = !$todo->pinned;
+
         $todo->save();
 
         if ($request->expectsJson()) {

@@ -12,11 +12,14 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "*",
         "eluceo/ical": "*",
+        "http-interop/http-factory-guzzle": "*",
         "laravel-notification-channels/webpush": "*",
         "laravel/framework": "^12.0",
         "laravel/reverb": "*",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/scout": "*",
+        "laravel/tinker": "^2.10.1",
+        "meilisearch/meilisearch-php": "*"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "*",
