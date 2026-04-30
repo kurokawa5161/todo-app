@@ -25,7 +25,7 @@ class TodoRequest extends FormRequest
         return [
             'title' => 'required|string|max:100',
             'content' => 'nullable|string|max:200',
-            'start_date' => 'nullable|date',
+            'start_date' => 'required|date',
             'end_date' => 'required|date',
             'category_id' => 'nullable|integer|exists:categories,id',
             'priority' => 'nullable|integer|between:1,3',

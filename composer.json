@@ -19,7 +19,8 @@
         "laravel/sanctum": "^4.0",
         "laravel/scout": "*",
         "laravel/tinker": "^2.10.1",
-        "meilisearch/meilisearch-php": "*"
+        "meilisearch/meilisearch-php": "*",
+        "phpoffice/phpspreadsheet": "*"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "*",

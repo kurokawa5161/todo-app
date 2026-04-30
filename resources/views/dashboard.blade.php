@@ -5,6 +5,31 @@
         </h2>
     </x-slot>
 
+    <style>
+        /* ガントチャート カテゴリー色 */
+        @foreach ($categories ?? [] as $category)
+            @if ($category->color)
+                .gantt-category-{{ $category->id }} .bar {
+                    fill: {{ $category->color }} !important;
+                }
+
+                .gantt-category-{{ $category->id }} .bar-progress {
+                    fill: {{ $category->color }} !important;
+                    opacity: 0.8;
+                }
+            @endif
+        @endforeach
+
+        .gantt-default .bar {
+            fill: #94a3b8 !important;
+        }
+
+        .gantt-default .bar-progress {
+            fill: #94a3b8 !important;
+            opacity: 0.8;
+        }
+    </style>
+
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
@@ -14,7 +39,8 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">総Todo数</div>
-                        <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $total }}</div>
+                        <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $total }}
+                        </div>
                     </div>
                 </div>
 
@@ -31,7 +57,8 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">未完了</div>
-                        <div class="mt-2 text-3xl font-bold text-orange-600 dark:text-orange-400">{{ $active }}
+                        <div class="mt-2 text-3xl font-bold text-orange-600 dark:text-orange-400">
+                            {{ $active }}
                         </div>
                     </div>
                 </div>
@@ -91,7 +118,8 @@
                 {{-- 週次完了数推移 --}}
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">📈 週次完了数推移（過去4週間）</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">📈 週次完了数推移（過去4週間）
+                        </h3>
                         <div class="h-64">
                             <canvas id="weeklyChart"></canvas>
                         </div>
@@ -101,7 +129,8 @@
                 {{-- 月次完了数推移 --}}
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">📅 月次完了数推移（過去6ヶ月）</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">📅 月次完了数推移（過去6ヶ月）
+                        </h3>
                         <div class="h-64">
                             <canvas id="monthlyChart"></canvas>
                         </div>
@@ -115,6 +144,62 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">📊 年間完了数推移（過去12ヶ月）</h3>
                     <div class="h-80">
                         <canvas id="yearlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ヒートマップ（日別活動状況） --}}
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">🔥 日別活動状況（過去30日間）</h3>
+                    <div class="overflow-x-auto">
+                        <div class="flex gap-2">
+                            {{-- 曜日ラベル（左側） --}}
+                            <div class="flex flex-col gap-1 pt-5">
+                                <div class="h-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">月</div>
+                                <div class="h-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">火</div>
+                                <div class="h-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">水</div>
+                                <div class="h-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">木</div>
+                                <div class="h-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">金</div>
+                                <div class="h-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">土</div>
+                                <div class="h-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">日</div>
+                            </div>
+
+                            {{-- ヒートマップ本体 --}}
+                            <div>
+                                {{-- 月ラベル（上部） --}}
+                                <div id="heatmap-month-labels"
+                                    class="flex gap-1 mb-1 h-4 text-xs text-gray-500 dark:text-gray-400">
+                                    <!-- 月ラベル -->
+                                </div>
+
+                                {{-- セルグリッド --}}
+                                <div id="heatmap" class="inline-flex gap-1">
+                                    <!-- ヒートマップグリッド -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <span>少ない</span>
+                        <div class="flex gap-1">
+                            <div class="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded-sm"></div>
+                            <div class="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
+                            <div class="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
+                            <div class="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
+                            <div class="w-3 h-3 bg-green-800 dark:bg-green-300 rounded-sm"></div>
+                        </div>
+                        <span>多い</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ガントチャート --}}
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">📅 タスクタイムライン</h3>
+                    <div class="overflow-x-auto">
+                        <svg id="gantt"></svg>
                     </div>
                 </div>
             </div>
@@ -154,7 +239,7 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse ($categories as $category)
+                                @forelse ($categoryStats as $category)
                                     <tr>
                                         <td
                                             class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -360,6 +445,35 @@
                             </svg>
                             月次レポート（PDF）
                         </a>
+
+                        <a href="{{ route('dashboard.export.pdf.yearly') }}"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition duration-150 ease-in-out">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                            年間レポート（PDF）
+                        </a>
+
+                        <a href="{{ route('dashboard.export.excel') }}"
+                            class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition duration-150 ease-in-out">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                            Excel エクスポート
+                        </a>
+                        <a href="{{ route('dashboard.export.json') }}"
+                            class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition">
+                            📄 JSON
+                        </a>
+                        <a href="{{ route('dashboard.export.xml') }}"
+                            class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded transition">
+                            📄 XML
+                        </a>
+
                     </div>
                 </div>
             </div>
@@ -370,302 +484,442 @@
     </div>
 
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const isDarkMode = document.documentElement.classList.contains('dark');
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const isDarkMode = document.documentElement.classList.contains('dark');
 
-            // カテゴリ別円グラフ
-            new Chart(document.getElementById('categoryChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: @json(array_column($categories, 'category_name')),
-                    datasets: [{
-                        data: @json(array_column($categories, 'total')),
-                        backgroundColor: [
-                            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-                            '#EC4899', '#14B8A6', '#F97316', '#06B6D4', '#84CC16'
+                // ヒートマップデータ
+                const heatmapData = @json($heatmapData);
+
+                // ヒートマップ描画
+                const heatmapContainer = document.getElementById('heatmap');
+                const monthLabelsContainer = document.getElementById('heatmap-month-labels');
+                const maxCount = Math.max(...heatmapData.map(d => d.count));
+
+                // 週ごとにグループ化（7日単位）
+                const weeks = [];
+                for (let i = 0; i < heatmapData.length; i += 7) {
+                    weeks.push(heatmapData.slice(i, i + 7));
+                }
+
+                // 月ラベル生成
+                let currentMonth = '';
+                weeks.forEach((week, weekIndex) => {
+                    const firstDay = week[0];
+                    const month = new Date(firstDay.date).getMonth() + 1; // 1-12
+                    const monthStr = month + '月';
+
+                    const monthLabel = document.createElement('div');
+                    monthLabel.className = 'text-xs';
+                    monthLabel.style.width = '20px'; // セル幅(16px) + gap(4px)
+
+                    // 月が変わったら表示
+                    if (currentMonth !== monthStr) {
+                        monthLabel.textContent = monthStr;
+                        currentMonth = monthStr;
+                    } else {
+                        monthLabel.textContent = '';
+                    }
+
+                    monthLabelsContainer.appendChild(monthLabel);
+                });
+
+                // セルグリッド生成
+                weeks.forEach(week => {
+                    const weekColumn = document.createElement('div');
+                    weekColumn.className = 'flex flex-col gap-1';
+
+                    week.forEach(day => {
+                        const cell = document.createElement('div');
+                        // サイズを大きく、枠線追加で見やすく
+                        cell.className =
+                            'w-4 h-4 rounded border border-gray-600 transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer';
+
+                        // 色の強度を計算（0-4のレベル）
+                        let colorLevel = 0;
+                        if (day.count > 0) {
+                            colorLevel = Math.min(4, Math.ceil((day.count / maxCount) * 4));
+                        }
+
+                        // 色を設定（ダークモード固定）
+                        const colors = ['bg-gray-700', 'bg-green-900', 'bg-green-700', 'bg-green-500',
+                            'bg-green-300'
+                        ];
+                        cell.className += ' ' + colors[colorLevel];
+
+                        // ツールチップ
+                        cell.title = `${day.date}: ${day.count}件完了`;
+
+                        weekColumn.appendChild(cell);
+                    });
+
+                    heatmapContainer.appendChild(weekColumn);
+                });
+
+                // カテゴリ別円グラフ
+                new Chart(document.getElementById('categoryChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: @json(array_column($categoryStats, 'category_name')),
+                        datasets: [{
+                            data: @json(array_column($categoryStats, 'total')),
+                            backgroundColor: [
+                                '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+                                '#EC4899', '#14B8A6', '#F97316', '#06B6D4', '#84CC16'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    padding: 10
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 完了/未完了ドーナツグラフ
+                new Chart(document.getElementById('statusChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['完了', '未完了'],
+                        datasets: [{
+                            data: [{{ $done }}, {{ $active }}],
+                            backgroundColor: ['#10B981', '#F59E0B']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    padding: 10
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 優先度別棒グラフ
+                new Chart(document.getElementById('priorityChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: @json(array_column($priorities, 'priority_name')),
+                        datasets: [{
+                                label: '完了',
+                                data: @json(array_column($priorities, 'done')),
+                                backgroundColor: '#10B981'
+                            },
+                            {
+                                label: '未完了',
+                                data: @json(array_column($priorities, 'active')),
+                                backgroundColor: '#F59E0B'
+                            }
                         ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#f3f4f6',
-                                font: { size: 12, weight: 'bold' },
-                                padding: 10
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 完了/未完了ドーナツグラフ
-            new Chart(document.getElementById('statusChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['完了', '未完了'],
-                    datasets: [{
-                        data: [{{ $done }}, {{ $active }}],
-                        backgroundColor: ['#10B981', '#F59E0B']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#f3f4f6',
-                                font: { size: 12, weight: 'bold' },
-                                padding: 10
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 優先度別棒グラフ
-            new Chart(document.getElementById('priorityChart'), {
-                type: 'bar',
-                data: {
-                    labels: @json(array_column($priorities, 'priority_name')),
-                    datasets: [
-                        {
-                            label: '完了',
-                            data: @json(array_column($priorities, 'done')),
-                            backgroundColor: '#10B981'
-                        },
-                        {
-                            label: '未完了',
-                            data: @json(array_column($priorities, 'active')),
-                            backgroundColor: '#F59E0B'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#f3f4f6',
-                                font: { size: 12, weight: 'bold' },
-                                padding: 10
-                            }
-                        }
                     },
-                    scales: {
-                        x: {
-                            ticks: {
-                                color: '#f3f4f6',
-                                font: { size: 14, weight: 'bold' }
-                            },
-                            grid: {
-                                display: false
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    padding: 10
+                                }
                             }
                         },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1,
-                                color: '#f3f4f6',
-                                font: { size: 14, weight: 'bold' }
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
                             },
-                            grid: {
-                                color: isDarkMode ? '#374151' : '#e5e7eb'
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    }
+                                },
+                                grid: {
+                                    color: isDarkMode ? '#374151' : '#e5e7eb'
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
 
-            // タグ別円グラフ
-            new Chart(document.getElementById('tagChart'), {
-                type: 'pie',
-                data: {
-                    labels: @json(array_column($tags, 'tag_name')),
-                    datasets: [{
-                        data: @json(array_column($tags, 'total')),
-                        backgroundColor: [
-                            '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6',
-                            '#EC4899', '#14B8A6', '#F97316', '#06B6D4', '#84CC16'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#f3f4f6',
-                                font: { size: 12, weight: 'bold' },
-                                padding: 10
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 週次完了数推移グラフ
-            new Chart(document.getElementById('weeklyChart'), {
-                type: 'line',
-                data: {
-                    labels: @json(array_column($weeklyData, 'label')),
-                    datasets: [{
-                        label: '完了数',
-                        data: @json(array_column($weeklyData, 'count')),
-                        borderColor: '#10B981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#f3f4f6',
-                                font: { size: 12, weight: 'bold' },
-                                padding: 10
-                            }
-                        }
+                // タグ別円グラフ
+                new Chart(document.getElementById('tagChart'), {
+                    type: 'pie',
+                    data: {
+                        labels: @json(array_column($tags, 'tag_name')),
+                        datasets: [{
+                            data: @json(array_column($tags, 'total')),
+                            backgroundColor: [
+                                '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6',
+                                '#EC4899', '#14B8A6', '#F97316', '#06B6D4', '#84CC16'
+                            ]
+                        }]
                     },
-                    scales: {
-                        x: {
-                            ticks: {
-                                color: '#f3f4f6',
-                                font: { size: 13 }
-                            },
-                            grid: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1,
-                                color: '#f3f4f6',
-                                font: { size: 13 }
-                            },
-                            grid: {
-                                color: '#374151'
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    padding: 10
+                                }
                             }
                         }
                     }
-                }
+                });
+
+                // 週次完了数推移グラフ
+                new Chart(document.getElementById('weeklyChart'), {
+                    type: 'line',
+                    data: {
+                        labels: @json(array_column($weeklyData, 'label')),
+                        datasets: [{
+                            label: '完了数',
+                            data: @json(array_column($weeklyData, 'count')),
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    padding: 10
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 13
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 13
+                                    }
+                                },
+                                grid: {
+                                    color: '#374151'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 月次完了数推移グラフ
+                new Chart(document.getElementById('monthlyChart'), {
+                    type: 'line',
+                    data: {
+                        labels: @json(array_column($monthlyData, 'label')),
+                        datasets: [{
+                            label: '完了数',
+                            data: @json(array_column($monthlyData, 'count')),
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    padding: 10
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 13
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 13
+                                    }
+                                },
+                                grid: {
+                                    color: '#374151'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 年間完了数推移グラフ
+                new Chart(document.getElementById('yearlyChart'), {
+                    type: 'line',
+                    data: {
+                        labels: @json(array_column($yearlyData, 'label')),
+                        datasets: [{
+                            label: '完了数',
+                            data: @json(array_column($yearlyData, 'count')),
+                            borderColor: '#8B5CF6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    padding: 10
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 13
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    color: '#f3f4f6',
+                                    font: {
+                                        size: 13
+                                    }
+                                },
+                                grid: {
+                                    color: '#374151'
+                                }
+                            }
+                        }
+                    }
+                });
             });
 
-            // 月次完了数推移グラフ
-            new Chart(document.getElementById('monthlyChart'), {
-                type: 'line',
-                data: {
-                    labels: @json(array_column($monthlyData, 'label')),
-                    datasets: [{
-                        label: '完了数',
-                        data: @json(array_column($monthlyData, 'count')),
-                        borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#f3f4f6',
-                                font: { size: 12, weight: 'bold' },
-                                padding: 10
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: {
-                                color: '#f3f4f6',
-                                font: { size: 13 }
-                            },
-                            grid: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1,
-                                color: '#f3f4f6',
-                                font: { size: 13 }
-                            },
-                            grid: {
-                                color: '#374151'
-                            }
-                        }
-                    }
-                }
-            });
+            // ガントチャートデータ
+            const gantData = @json($gantData);
 
-            // 年間完了数推移グラフ
-            new Chart(document.getElementById('yearlyChart'), {
-                type: 'line',
-                data: {
-                    labels: @json(array_column($yearlyData, 'label')),
-                    datasets: [{
-                        label: '完了数',
-                        data: @json(array_column($yearlyData, 'count')),
-                        borderColor: '#8B5CF6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#f3f4f6',
-                                font: { size: 12, weight: 'bold' },
-                                padding: 10
-                            }
+            // ガントチャート初期化
+            if (gantData.length > 0) {
+                try {
+                    // カテゴリー別の色マッピングを作成
+                    const categoryColors = {};
+                    gantData.forEach(task => {
+                        if (task.custom_class && task.color) {
+                            categoryColors[task.custom_class] = task.color;
                         }
-                    },
-                    scales: {
-                        x: {
-                            ticks: {
-                                color: '#f3f4f6',
-                                font: { size: 13 }
-                            },
-                            grid: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1,
-                                color: '#f3f4f6',
-                                font: { size: 13 }
-                            },
-                            grid: {
-                                color: '#374151'
-                            }
-                        }
+                    });
+
+                    // カスタムCSSを動的に追加
+                    let styleElement = document.createElement('style');
+                    let cssRules = '';
+                    for (const [category, color] of Object.entries(categoryColors)) {
+                        cssRules += `.bar[data-custom-class="${category}"] { fill: ${color} !important; }\n`;
                     }
+                    styleElement.textContent = cssRules;
+                    document.head.appendChild(styleElement);
+
+                    const gantt = new Gantt("#gantt", gantData);
+                    console.log('Gantt initialized successfully');
+                } catch (error) {
+                    console.error('Gantt error:', error);
+                    document.getElementById('gantt').innerHTML = '<p class="text-red-500">ガントチャートの初期化に失敗しました: ' + error
+                        .message + '</p>';
                 }
-            });
-        });
-    </script>
+            } else {
+                document.getElementById('gantt').innerHTML = '<p class="text-gray-500 dark:text-gray-400">表示するタスクがありません</p>';
+            }
+        </script>
     @endpush
 </x-app-layout>

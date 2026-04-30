@@ -69,6 +69,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/export/csv', [DashboardController::class, 'exportCsv'])->name('dashboard.export.csv');
     Route::get('/dashboard/export/pdf/weekly', [DashboardController::class, 'exportWeeklyPdf'])->name('dashboard.export.pdf.weekly');
     Route::get('/dashboard/export/pdf/monthly', [DashboardController::class, 'exportMonthlyPdf'])->name('dashboard.export.pdf.monthly');
+    Route::get('/dashboard/export/pdf/yearly', [DashboardController::class, 'exportYearlyPdf'])->name('dashboard.export.pdf.yearly');
+    Route::get('/dashboard/export/excel', [DashboardController::class, 'exportExcel'])->name('dashboard.export.excel');
+    Route::get('/dashboard/export/json', [DashboardController::class, 'exportJson'])->name('dashboard.export.json');
+    Route::get('/dashboard/export/xml', [DashboardController::class, 'exportXml'])->name('dashboard.export.xml');
+
+
 
     //カレンダー
     Route::get('/todos/{todo}/export-calendar', [TodoController::class, 'exportCalendar'])->name('todos.export-calendar');

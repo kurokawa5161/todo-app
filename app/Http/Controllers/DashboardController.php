@@ -9,6 +9,11 @@ use App\Models\Category;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class DashboardController extends Controller
 {
@@ -24,6 +29,12 @@ class DashboardController extends Controller
         });
         $yearlyData = Cache::remember("yearly_data_{$userId}", 3600, function () {
             return $this->getYearlyCompletionData();
+        });
+        $heatmapData = Cache::remember("heatmap_data_{$userId}", 3600, function () {
+            return $this->getHeatmapData();
+        });
+        $gantData = Cache::remember("gant_data_{$userId}", 3600, function () {
+            return $this->getgantData();
         });
 
         //総Todo数、完了数、未完了数
@@ -63,7 +74,7 @@ class DashboardController extends Controller
         $deadLineCompTodoPct = $deadLineTodo > 0 ? $deadLineCompTodo / $deadLineTodo * 100 : 0;
 
         //カテゴリ別集計（カテゴリごとの総数、完了、未完了、完了率）
-        $categories = array();
+        $categoryStats = array();
         $categoryTotals = Todo::selectRaw('todos.category_id, categories.name as category_name, count(*) as total')
             ->leftjoin('categories', 'todos.category_id', '=', 'categories.id')
             ->where('todos.user_id', auth()->id())
@@ -82,7 +93,7 @@ class DashboardController extends Controller
             ->pluck('active', 'category_id'); // category_id をキーにした配列
         foreach ($categoryTotals as $categoryTotal) {
             $done = $categoryDones[$categoryTotal->category_id] ?? 0;
-            $categories[] = [
+            $categoryStats[] = [
                 'category_id' => $categoryTotal->category_id,
                 'category_name' => $categoryTotal->category_name,
                 'total' => $categoryTotal->total,
@@ -170,6 +181,8 @@ class DashboardController extends Controller
             ];
         }
 
+        //カテゴリー
+        $categories = Category::where('user_id', auth()->id())->get();
 
         $result = [
             'total' => $total,
@@ -179,12 +192,15 @@ class DashboardController extends Controller
             'completed_week' => $completedWeek,
             'completed_month' => $completedMonth,
             'deadline_comp_todo_pct' => $deadLineCompTodoPct,
-            'categories' => $categories,
+            'categoryStats' => $categoryStats,
             'tags' => $tags,
             'priorities' => $priorities,
             'weeklyData' => $weeklyData,
             'monthlyData' => $monthlyData,
             'yearlyData' => $yearlyData,
+            'heatmapData' => $heatmapData,
+            'gantData' => $gantData,
+            'categories' => $categories
         ];
 
         return view('dashboard', $result);
@@ -271,6 +287,27 @@ class DashboardController extends Controller
         return $pdf->download('monthly_report_' . date('YmdHis') . '.pdf');
     }
 
+    //年間レポート
+    public function exportYearlyPdf()
+    {
+        $startOfYear = now()->subYear()->startOfDay();
+        $endOfYear = now()->endOfDay();
+
+        $data = [
+            'title' => '年間レポート',
+            'period' => $startOfYear->format('Y-m-d') . '-' . $endOfYear->format('Y-m-d'),
+            'total' => Todo::where('user_id', auth()->id())->count(),
+            'done' => Todo::where('user_id', auth()->id())->whereNotNull('completed_at')->count(),
+            'active' => Todo::where('user_id', auth()->id())->whereNull('completed_at')->count(),
+            'yearly_completed' =>  Todo::where('user_id', auth()->id())
+                ->whereNotNull('completed_at')
+                ->whereBetween('completed_at', [$startOfYear, $endOfYear])
+                ->count(),
+        ];
+        $pdf = Pdf::loadView('reports.yearly', $data);
+        return $pdf->download('yearly_report_' . date('YmdHis') . '.pdf');
+    }
+
     //週次データ取得
     private function getWeeklyCompletionData()
     {
@@ -354,5 +391,198 @@ class DashboardController extends Controller
             ];
         }
         return $yearlyData;
+    }
+
+    //ヒートマップデータ取得（過去30日間）
+    private function getHeatmapData()
+    {
+        $heatmapData = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $dateStr = $date->format('Y-m-d');
+
+            $count = Todo::where('user_id', auth()->id())
+                ->whereNotNull('completed_at')
+                ->whereRaw('DATE(completed_at) = ?', [$dateStr])
+                ->count();
+
+            $heatmapData[] = [
+                'date' => $dateStr,
+                'dayOfWeek' => $date->format('w'), // 0(日)～6(土)
+                'count' => $count,
+            ];
+        }
+        return $heatmapData;
+    }
+
+    private function getgantData()
+    {
+        return Todo::where('user_id', auth()->id())
+            ->select('id', 'title', 'start_date', 'end_date', 'completed_at', 'category_id')
+            ->with('category:id,name,color')
+            ->orderBy('end_date')
+            ->get()
+            ->map(function ($todo) {
+                return [
+                    'id' => 'task-' . $todo->id,
+                    'name' => $todo->title,
+                    'start' => $todo->start_date->format('Y-m-d'),
+                    'end' => $todo->end_date->format('Y-m-d'),
+                    'progress' => $todo->completed_at ? 100 : 0,
+                    'custom_class' => $todo->category ? 'gantt-category-' . $todo->category->id : 'gantt-default',
+                    'category_color' => $todo->category?->color ?? '#94a3b8',
+                ];
+            })
+            ->toArray();
+    }
+
+    public function exportExcel()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // タイトル行
+        $sheet->setCellValue('A1', 'Todoリスト');
+        $sheet->mergeCells('A1:J1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // ヘッダー行（3行目）
+        $headers = ['ID', 'タイトル', '内容', 'カテゴリー', 'タグ', '優先度', '開始日', '終了日', '完了日', 'ステータス'];
+        $column = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($column . '3', $header);
+            $sheet->getStyle($column . '3')->getFont()->setBold(true);
+            $sheet->getStyle($column . '3')->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()->setARGB('FFE0E0E0');
+            $column++;
+        }
+
+        // データ取得
+        $todos = Todo::where('user_id', auth()->id())
+            ->with(['category', 'tags'])
+            ->orderBy('end_date')
+            ->get();
+
+        if ($todos->isEmpty()) {
+            $sheet->setCellValue('A4', 'データがありません');
+            $sheet->mergeCells('A4:J4');
+        }
+
+        // データ行
+        $row = 4;
+        foreach ($todos as $todo) {
+            $sheet->setCellValue('A' . $row, $todo->id);
+            $sheet->setCellValue('B' . $row, $todo->title);
+            $sheet->setCellValue('C' . $row, $todo->content);
+            $sheet->setCellValue('D' . $row, $todo->category->name ?? '未分類');
+            $sheet->setCellValue('E' . $row, $todo->tags->pluck('name')->join(', '));
+            $sheet->setCellValue('F' . $row, $todo->priority == 1 ? '高' : ($todo->priority == 2 ? '中' : '低'));
+            $sheet->setCellValue('G' . $row, $todo->start_date->format('Y-m-d'));
+            $sheet->setCellValue('H' . $row, $todo->end_date->format('Y-m-d'));
+            $sheet->setCellValue('I' . $row, $todo->completed_at?->format('Y-m-d') ?? '');
+            $sheet->setCellValue('J' . $row, $todo->completed_at ? '完了' : '未完了');
+            $row++;
+        }
+
+        // 列幅自動調整
+        foreach (range('A', 'J') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // 枠線追加
+        $sheet->getStyle('A3:J' . ($row - 1))
+            ->getBorders()
+            ->getAllBorders()
+            ->setBorderStyle(Border::BORDER_THIN);
+
+        // ファイル出力
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'todos_' . date('YmdHis') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    //JSONエクスポート
+    public function exportJson()
+    {
+        $todos = Todo::Where('user_id', auth()->id())
+            ->with(['category', 'tags'])
+            ->orderBy('end_date')
+            ->get()
+            ->map(function ($todo) {
+                return [
+                    'id' => $todo->id,
+                    'title' => $todo->title,
+                    'content' => $todo->content,
+                    'category' => $todo->category?->name,
+                    'tags' => $todo->tags->pluck('name'),
+                    'priority' => match ($todo->priority) {
+                        1 => '高',
+                        2 => '中',
+                        3 => '低',
+                        default => ''
+                    },
+                    'start_date' => $todo->start_date->format('Y-m-d'),
+                    'end_date' => $todo->end_date->format('Y-m-d'),
+                    'completed_at' => $todo->completed_at?->format('Y-m-d'),
+                    'status' => $todo->completed_at ? '完了' : '未完了'
+                ];
+            });
+
+        $fileName = 'todos_' . date('YmdHis') . '.json';
+
+        return response()->json($todos, 200, [
+            'Content-Type' => 'application/json',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    }
+
+    //XMLエクスポート
+    public function exportXml()
+    {
+        $todos = Todo::Where('user_id', auth()->id())
+            ->with(['category', 'tags'])
+            ->orderBy('end_date')
+            ->get();
+
+        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><todos/>');
+
+        foreach ($todos as $todo) {
+            $todoNode = $xml->addChild('todo');
+            $todoNode->addChild('id', $todo->id);
+            $todoNode->addChild('title', htmlspecialchars($todo->title));
+            $todoNode->addChild('content', htmlspecialchars($todo->content));
+            $todoNode->addChild('category', htmlspecialchars($todo->category?->name));
+
+            $tagsNode = $todoNode->addChild('tags');
+            foreach ($todo->tags as $tag) {
+                $tagsNode->addChild('tag', htmlspecialchars($tag->name));
+            }
+
+            $priority = match ($todo->priority) {
+                1 => '高',
+                2 => '中',
+                3 => '低',
+                default => ''
+            };
+            $todoNode->addChild('priority', $priority);
+            $todoNode->addChild('start_date', $todo->start_date->format('Y-m-d'));
+            $todoNode->addChild('end_date', $todo->end_date->format('Y-m-d'));
+            $todoNode->addChild('completed_at', $todo->completed_at?->format('Y-m-d'));
+            $todoNode->addChild('status', $todo->completed_at ? '完了' : '未完了');
+        }
+
+        $fileName = 'todos_' . date('YmdHis') . '.xml';
+
+        return response($xml->asXML(), 200, [
+            'Content-Type' => 'application/xml',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 }
