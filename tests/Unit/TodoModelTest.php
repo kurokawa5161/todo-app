@@ -145,7 +145,7 @@ class TodoModelTest extends TestCase
         $scopeResults = Todo::query()->search($keyword)->get();
 
         // 手動クエリ（比較用）
-        $results = Todo::where('title', '%' . $keyword, '%')
+        $results = Todo::where('title', '%' . $keyword . '%')
             ->orWhere('content', '%' . $keyword . '%')->get();
 
         $this->assertEquals($scopeResults, $results);
