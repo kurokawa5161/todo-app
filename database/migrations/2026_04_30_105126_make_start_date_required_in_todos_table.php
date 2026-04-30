@@ -14,7 +14,7 @@ return new class extends Migration
             UPDATE todos
             SET start_date = end_date
             WHERE start_date IS NULL
-               OR start_date = ''
+               OR CAST(start_date AS CHAR) = ''
                OR start_date = '0000-00-00'
                OR start_date < '1900-01-01'
         ");
