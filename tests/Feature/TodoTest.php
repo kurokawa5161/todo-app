@@ -16,6 +16,7 @@ class TodoTest extends TestCase
 
         $response = $this->actingAs($user)->post('/todos', [
             'title' => 'Laravel勉強',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -37,6 +38,7 @@ class TodoTest extends TestCase
         $user = User::factory()->create();
         $response = $this->actingAs($user)->post('/todos', [
             'title' => '',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -50,6 +52,7 @@ class TodoTest extends TestCase
 
         $todo = $owner->todos()->create([
             'title' => 'secret',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -64,12 +67,14 @@ class TodoTest extends TestCase
         $user = User::factory()->create();
         $todo = $user->todos()->create([
             'title' => '更新元',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2
         ]);
         $update = [
             'title' => '自分のTodoは更新できる',
             'priority' => 2,
+            'start_date' => '2026-04-01',
             'end_date' => '2026-04-18'
         ];
 
@@ -85,12 +90,14 @@ class TodoTest extends TestCase
 
         $todo = $owner->todos()->create([
             'title' => '更新元',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2
         ]);
         $update = [
             'title' => '他人のTodoは更新できない',
             'priority' => 2,
+            'start_date' => '2026-04-01',
             'end_date' => '2026-04-18'
         ];
 
@@ -105,6 +112,7 @@ class TodoTest extends TestCase
 
         $todo = $owner->todos()->create([
             'title' => '自分のTodoは削除できる',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
         $response = $this->actingAs($owner)->delete("/todos/{$todo->id}");
@@ -119,6 +127,7 @@ class TodoTest extends TestCase
         $todo = $owner->todos()->create([
             'title' => '自分のTodo編集画面にアクセスできる',
             'priority' => 2,
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -133,6 +142,7 @@ class TodoTest extends TestCase
         $todo = $owner->todos()->create([
             'title' => '自分のTodo編集画面にアクセスできる',
             'priority' => 2,
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -145,6 +155,7 @@ class TodoTest extends TestCase
         $owner = User::factory()->create();
         $todo = $owner->todos()->create([
             'title' => '自分のTodoの完了状態を切り替えられる',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -162,6 +173,7 @@ class TodoTest extends TestCase
 
         $todo = $owner->todos()->create([
             'title' => '他人のTodoの完了状態は切り替えられない',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -174,6 +186,7 @@ class TodoTest extends TestCase
         $owner = User::factory()->create();
         $todo = $owner->todos()->create([
             'title' => '自分のTodoのピン留めを切り替えられる',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'is_pinned' => 0
         ]);
@@ -191,6 +204,7 @@ class TodoTest extends TestCase
         $other = User::factory()->create();
         $todo = $owner->todos()->create([
             'title' => '他人のTodoのピン留めは切り替えられない',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'is_pinned' => 0
         ]);

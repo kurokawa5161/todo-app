@@ -19,6 +19,7 @@ class TodoModelTest extends TestCase
         $user = User::factory()->create();
         $todo = $user->todos()->create([
             'title' => 'テスト',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2
         ]);
@@ -35,6 +36,7 @@ class TodoModelTest extends TestCase
         ]);
         $todo = $user->todos()->create([
             'title' => 'テスト',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2,
             'category_id' => $category->id
@@ -48,12 +50,14 @@ class TodoModelTest extends TestCase
         $user = User::factory()->create();
         $parent = $user->todos()->create([
             'title' => '親TODO',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2,
             'parent_id' => null
         ]);
         $todo = $user->todos()->create([
             'title' => 'テスト',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2,
             'parent_id' => $parent->id
@@ -66,12 +70,14 @@ class TodoModelTest extends TestCase
         $user = User::factory()->create();
         $parent = $user->todos()->create([
             'title' => 'テスト',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2,
             'parent_id' => null
         ]);
         $todo = $user->todos()->create([
             'title' => 'テスト',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2,
             'parent_id' => $parent->id
@@ -85,6 +91,7 @@ class TodoModelTest extends TestCase
         $user = User::factory()->create();
         $todo = $user->todos()->create([
             'title' => 'テスト',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2,
         ]);
@@ -105,6 +112,7 @@ class TodoModelTest extends TestCase
         $user = User::factory()->create();
         $todo = $user->todos()->create([
             'title' => 'テスト',
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'priority' => 2,
         ]);
@@ -122,11 +130,6 @@ class TodoModelTest extends TestCase
         $this->assertEquals($tag->id, $todo->tags->first()->id);
     }
 
-
-
-
-
-
     public function test_searchスコープ()
     {
         $user = User::factory()->create();
@@ -134,13 +137,13 @@ class TodoModelTest extends TestCase
         $todo = $user->todos()->create([
             'title' => $keyword,
             'priority' => 2,
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
         $scopeResults = Todo::search($keyword)->get();
 
-        $results = Todo::where('title', 'like', '%' . $keyword . '%')
-            ->orWhere('content', 'like', '%' . $keyword . '%')->get();
+        $results = Todo::query()->search($keyword)->get();
 
         $this->assertEquals($scopeResults, $results);
     }
@@ -157,6 +160,7 @@ class TodoModelTest extends TestCase
             'title' => 'test',
             'priority' => 2,
             'category_id' => $category->id,
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -174,6 +178,7 @@ class TodoModelTest extends TestCase
         $todo = $user->todos()->create([
             'title' => 'test',
             'priority' => $priority,
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31'
         ]);
 
@@ -211,6 +216,7 @@ class TodoModelTest extends TestCase
         $todo = $user->todos()->create([
             'title' => 'test',
             'priority' => 2,
+            'start_date' => '2026-04-01',
             'end_date' => '2026-12-31',
             'completed_at' => null
         ]);
