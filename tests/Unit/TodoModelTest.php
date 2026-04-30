@@ -141,9 +141,12 @@ class TodoModelTest extends TestCase
             'end_date' => '2026-12-31'
         ]);
 
-        $scopeResults = Todo::search($keyword)->get();
+        // スコープを使用
+        $scopeResults = Todo::query()->search($keyword)->get();
 
-        $results = Todo::query()->search($keyword)->get();
+        // 手動クエリ（比較用）
+        $results = Todo::where('title', '%' . $keyword, '%')
+            ->orWhere('content', '%' . $keyword . '%')->get();
 
         $this->assertEquals($scopeResults, $results);
     }
