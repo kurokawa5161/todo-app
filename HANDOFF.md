@@ -4,8 +4,8 @@
 
 **プロジェクト名**: Laravel Todo App  
 **目的**: Laravel学習用の実務レベルTodoアプリケーション  
-**開発期間**: 2026年1月 - 2026年4月  
-**現在の状況**: フェーズ19C完了（プッシュ通知完全実装）  
+**開発期間**: 2026年1月 - 2026年5月  
+**現在の状況**: フェーズ22完了（Advanced Dashboard Customization）  
 **開発者**: ckurokawa（is1101520@gmail.com）  
 
 ---
@@ -84,6 +84,45 @@
 - TodoAssignedNotification（タスク割り当て）
 - Chrome（FCM）・Edge（WNS）動作確認
 
+### ✅ フェーズ20A: 全文検索エンジン導入
+- Laravel Scout導入
+- Meilisearch セットアップ
+- 検索結果のハイライト表示
+
+### ✅ フェーズ20B: 高度な検索機能
+- ファセット検索（カテゴリ、優先度、期限での絞り込み）
+- 検索結果のソート（関連度、日付、優先度、タイトル）
+- 完了状態フィルター
+- 検索履歴の保存・表示UI
+- サジェスト機能（オートコンプリート）
+
+### ✅ フェーズ21A: 高度な統計レポート
+- Chart.js導入・基本グラフ実装
+- 週次サマリー強化（過去4週間グラフ）
+- 月次レポート強化（過去6ヶ月グラフ）
+- 年間サマリー（過去12ヶ月グラフ）
+- カテゴリ別・タグ別・優先度別グラフ
+
+### ✅ フェーズ21B: データ可視化強化
+- ヒートマップ実装（過去30日間のアクティビティ）
+- ガントチャート実装（Frappe Gantt）
+- カテゴリ別カラー表示
+
+### ✅ フェーズ21C: エクスポート機能拡張
+- Excel形式エクスポート（PhpSpreadsheet）
+- JSON形式エクスポート
+- XML形式エクスポート
+- エクスポートテンプレート機能
+
+### ✅ フェーズ22: Advanced Dashboard Customization
+- ウィジェット管理システム（dashboard_widgetsテーブル）
+- 9種類のウィジェット実装
+- ドラッグ&ドロップでの並び替え（Sortable.js）
+- 表示/非表示切り替え
+- ウィジェット設定モーダルUI
+- リセット機能（デフォルト8ウィジェット）
+- デフォルトウィジェット自動作成
+
 ---
 
 ## 技術スタック
@@ -99,6 +138,9 @@
 - **CSS Framework**: Tailwind CSS
 - **JavaScript**: Alpine.js（部分的）
 - **テンプレート**: Blade
+- **Charts**: Chart.js 4.4.1
+- **Drag & Drop**: Sortable.js 1.15.0
+- **Gantt**: Frappe Gantt 0.6.1
 
 ### テスト
 - **Pest**: Feature Test / Unit Test
@@ -112,6 +154,8 @@
 - **GitHub API**: Webhook、Issue同期
 - **Slack**: データベース通知（実API未接続）
 - **Calendar**: eluceo/ical（.icsエクスポート）
+- **Export**: PhpSpreadsheet（Excel）、DomPDF（PDF）
+- **Search**: Laravel Scout + Meilisearch
 
 ---
 
@@ -131,6 +175,9 @@ todo-app/
 │   │   │   ├── TagController.php           # タグ管理
 │   │   │   ├── SavedSearchController.php   # 保存済み検索
 │   │   │   ├── GitHubWebhookController.php # GitHub Webhook受信
+│   │   │   ├── DashboardWidgetController.php # ウィジェット管理
+│   │   │   ├── ExportTemplateController.php  # エクスポートテンプレート
+│   │   │   ├── PushSubscriptionController.php # プッシュ通知購読
 │   │   │   └── Api/                        # API Controllers
 │   │   ├── Middleware/
 │   │   │   ├── LogApiRequest.php           # APIログ記録
@@ -146,7 +193,11 @@ todo-app/
 │   │   ├── Team.php
 │   │   ├── TeamInvitation.php
 │   │   ├── SavedSearch.php
-│   │   └── ApiLog.php
+│   │   ├── ApiLog.php
+│   │   ├── DashboardWidget.php
+│   │   ├── ExportTemplate.php
+│   │   ├── NotificationSetting.php
+│   │   └── PushSubscription.php
 │   ├── Notifications/
 │   │   └── TodoSlackNotification.php       # Slack通知（database channel）
 │   ├── Policies/
@@ -154,7 +205,9 @@ todo-app/
 │   │   ├── CategoryPolicy.php
 │   │   ├── TagPolicy.php
 │   │   ├── CommentPolicy.php
-│   │   └── SavedSearchPolicy.php
+│   │   ├── SavedSearchPolicy.php
+│   │   ├── DashboardWidgetPolicy.php
+│   │   └── ExportTemplatePolicy.php
 │   ├── Providers/
 │   │   └── AppServiceProvider.php          # レート制限定義、Policy登録
 │   └── Services/
@@ -471,6 +524,26 @@ curl http://localhost/api/todos \
 - status_code, response_time
 - created_at, updated_at
 
+#### dashboard_widgets
+- id, user_id, widget_type, position
+- size, is_visible, settings
+- created_at, updated_at
+
+#### export_templates
+- id, user_id, name, description
+- format, fields, filters
+- created_at, updated_at
+
+#### notification_settings
+- id, user_id, email_enabled, web_push_enabled
+- deadline_reminder_days, weekly_report_enabled
+- created_at, updated_at
+
+#### push_subscriptions
+- id, user_id, endpoint, public_key
+- auth_token, content_encoding
+- created_at, updated_at
+
 ---
 
 ## セキュリティ対策まとめ
@@ -751,8 +824,8 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 ---
 
-**引継ぎ日**: 2026-04-27  
+**引継ぎ日**: 2026-05-01  
 **引継ぎ者**: Claude Sonnet 4.5  
-**プロジェクト状況**: フェーズ19A完了、本番環境未構築
+**プロジェクト状況**: フェーズ22完了（Advanced Dashboard Customization）、本番環境未構築
 
 お疲れさまでした！ご不明点があれば、Issueまたはメールでお問い合わせください。

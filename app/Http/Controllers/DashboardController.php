@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use App\Models\Todo;
 use App\Models\Category;
+use App\Models\DashboardWidget;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -184,6 +185,38 @@ class DashboardController extends Controller
         //カテゴリー
         $categories = Category::where('user_id', auth()->id())->get();
 
+        //ウィジェット
+        $widgets = DashboardWidget::where('user_id', auth()->id())
+            ->orderBy('position', 'asc')->get();
+
+        // デフォルトウィジェット自動作成（初回アクセス時）
+        if ($widgets->count() === 0) {
+            $defaultWidgets = [
+                ['widget_type' => 'stats', 'position' => 0, 'size' => 'full'],
+                ['widget_type' => 'chart_weekly', 'position' => 1, 'size' => 'medium'],
+                ['widget_type' => 'chart_monthly', 'position' => 2, 'size' => 'medium'],
+                ['widget_type' => 'heatmap', 'position' => 3, 'size' => 'medium'],
+                ['widget_type' => 'gantt', 'position' => 4, 'size' => 'full'],
+                ['widget_type' => 'recent_todos', 'position' => 5, 'size' => 'medium'],
+                ['widget_type' => 'category_summary', 'position' => 6, 'size' => 'medium'],
+                ['widget_type' => 'priority_summary', 'position' => 7, 'size' => 'medium'],
+            ];
+
+            foreach ($defaultWidgets as $widget) {
+                DashboardWidget::create([
+                    'user_id' => auth()->id(),
+                    'widget_type' => $widget['widget_type'],
+                    'position' => $widget['position'],
+                    'size' => $widget['size'],
+                    'is_visible' => true,
+                    'settings' => null,
+                ]);
+            }
+
+            $widgets = DashboardWidget::where('user_id', auth()->id())
+                ->orderBy('position', 'asc')->get();
+        }
+
         $result = [
             'total' => $total,
             'done' => $done,
@@ -200,7 +233,8 @@ class DashboardController extends Controller
             'yearlyData' => $yearlyData,
             'heatmapData' => $heatmapData,
             'gantData' => $gantData,
-            'categories' => $categories
+            'categories' => $categories,
+            'widgets' => $widgets
         ];
 
         return view('dashboard', $result);
@@ -311,7 +345,9 @@ class DashboardController extends Controller
     //週次データ取得
     private function getWeeklyCompletionData()
     {
-        $weeklyData = [];
+        $labels = [];
+        $data = [];
+
         // 過去4週間の週次完了数
         for ($i = 3; $i >= 0; $i--) {
             $start = now()->subWeeks($i)->startOfWeek();
@@ -322,53 +358,48 @@ class DashboardController extends Controller
                 ->whereBetween('completed_at', [$start, $end])
                 ->count();
 
-            $total = Todo::where('user_id', auth()->id())
-                ->whereBetween('end_date', [$start, $end])
-                ->count();
-
-            $weeklyData[] = [
-                'label' => '第' . (4 - $i) . '週',
-                'count' => $count,
-                'total' => $total,
-                'rate' => $total > 0 ? round($count / $total * 100, 1) : 0
-            ];
+            $labels[] = '第' . (4 - $i) . '週';
+            $data[] = $count;
         }
-        return $weeklyData;
+
+        return [
+            'labels' => $labels,
+            'data' => $data
+        ];
     }
 
     //月次データ取得
     private function getMonthlyCompletionData()
     {
-        $monthlyData = [];
+        $labels = [];
+        $data = [];
+
         // 過去6ヶ月の月次完了数
         for ($i = 5; $i >= 0; $i--) {
             $start = now()->subMonths($i)->startOfMonth();
-            $end = now()->subMonths()->endOfMonth($i);
+            $end = now()->subMonths($i)->endOfMonth();
 
             $count = Todo::where('user_id', auth()->id())
                 ->whereNotNull('completed_at')
                 ->whereBetween('completed_at', [$start, $end])
                 ->count();
 
-            $total = Todo::where('user_id', auth()->id())
-                ->whereBetween('end_date', [$start, $end])
-                ->count();
-
-            $monthlyData[] = [
-                'label' => $start->format('Y-m'),
-                'count' => $count,
-                'total' => $total,
-                'rate' => $total > 0 ? round($count / $total * 100, 1) : 0
-
-            ];
+            $labels[] = $start->format('Y-m');
+            $data[] = $count;
         }
-        return $monthlyData;
+
+        return [
+            'labels' => $labels,
+            'data' => $data
+        ];
     }
 
     //年間データ取得
     private function getYearlyCompletionData()
     {
-        $yearlyData = [];
+        $labels = [];
+        $data = [];
+
         for ($i = 11; $i >= 0; $i--) {
             $start = now()->subMonths($i)->startOfMonth();
             $end = now()->subMonths($i)->endOfMonth();
@@ -378,25 +409,21 @@ class DashboardController extends Controller
                 ->whereBetween('completed_at', [$start, $end])
                 ->count();
 
-            $total = Todo::where('user_id', auth()->id())
-                ->whereBetween('end_date', [$start, $end])
-                ->count();
-
-            $yearlyData[] = [
-                'label' => $start->format('Y-m'),
-                'count' => $count,
-                'total' => $total,
-                'rate' => $total > 0 ? round($count / $total * 100, 1) : 0
-
-            ];
+            $labels[] = $start->format('Y-m');
+            $data[] = $count;
         }
-        return $yearlyData;
+
+        return [
+            'labels' => $labels,
+            'data' => $data
+        ];
     }
 
     //ヒートマップデータ取得（過去30日間）
     private function getHeatmapData()
     {
-        $heatmapData = [];
+        // 過去30日間のデータを取得
+        $rawData = [];
         for ($i = 29; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $dateStr = $date->format('Y-m-d');
@@ -406,14 +433,37 @@ class DashboardController extends Controller
                 ->whereRaw('DATE(completed_at) = ?', [$dateStr])
                 ->count();
 
-            $heatmapData[] = [
+            $rawData[] = [
                 'date' => $dateStr,
-                'dayOfWeek' => $date->format('w'), // 0(日)～6(土)
+                'dayOfWeek' => (int)$date->format('w'), // 0(日)～6(土)
                 'count' => $count,
             ];
         }
-        return $heatmapData;
+
+        // 曜日ごとにカレンダー形式に変換
+        $calendar = array_fill(0, 7, []); // 7曜日分の配列
+        foreach ($rawData as $data) {
+            $calendar[$data['dayOfWeek']][] = [
+                'date' => $data['date'],
+                'count' => $data['count'],
+            ];
+        }
+
+        // 月ラベルを生成（最初の週の月を抽出）
+        $months = [];
+        foreach ($calendar[0] as $cell) {
+            $month = date('n月', strtotime($cell['date']));
+            if (!in_array($month, $months)) {
+                $months[] = $month;
+            }
+        }
+
+        return [
+            'months' => $months,
+            'calendar' => $calendar,
+        ];
     }
+
 
     private function getgantData()
     {

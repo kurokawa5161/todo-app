@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\GitHubWebhookController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\DashboardWidgetController;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\TodoDeadlineNotification;
 use App\Models\Todo;
@@ -204,6 +205,20 @@ Route::prefix('export-templates')->name('export-templates.')->middleware('auth')
     Route::delete('/{template}', [ExportTemplateController::class, 'destroy'])->name('destroy');
     Route::get('/{template}/export', [ExportTemplateController::class, 'export'])->name('export');
 });
+
+// ========================================
+// ウィジェット管理
+// ========================================
+Route::prefix('dashboard/widgets')->name('dashboard.widgets.')->middleware('auth')->group(function () {
+    Route::get('/', [DashboardWidgetController::class, 'index'])->name('index');
+    Route::post('/', [DashboardWidgetController::class, 'store'])->name('store');
+    Route::put('/{dashboardWidget}', [DashboardWidgetController::class, 'update'])->name('update');
+    Route::delete('/{dashboardWidget}', [DashboardWidgetController::class, 'destroy'])->name('destroy');
+    Route::patch('/reorder', [DashboardWidgetController::class, 'reorder'])->name('reorder');
+    Route::patch('/{dashboardWidget}/toggle', [DashboardWidgetController::class, 'toggle'])->name('toggle');
+    Route::patch('/reset', [DashboardWidgetController::class, 'reset'])->name('reset');
+});
+
 
 // ========================================
 // デバッグ用ルート

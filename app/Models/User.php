@@ -97,4 +97,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ExportTemplate::class);
     }
+
+    public function dashboardWidgets()
+    {
+        return $this->hasMany(DashboardWidget::class);
+    }
 }
