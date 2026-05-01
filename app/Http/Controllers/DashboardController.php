@@ -420,8 +420,14 @@ class DashboardController extends Controller
         return Todo::where('user_id', auth()->id())
             ->select('id', 'title', 'start_date', 'end_date', 'completed_at', 'category_id')
             ->with('category:id,name,color')
-            ->orderBy('end_date')
+            ->whereNotNull('start_date')
+            ->whereNotNull('end_date')
+            ->orderBy('start_date')
             ->get()
+            ->filter(function ($todo) {
+                // 開始日が終了日より前であることを確認
+                return $todo->start_date <= $todo->end_date;
+            })
             ->map(function ($todo) {
                 return [
                     'id' => 'task-' . $todo->id,
@@ -433,6 +439,7 @@ class DashboardController extends Controller
                     'category_color' => $todo->category?->color ?? '#94a3b8',
                 ];
             })
+            ->values()
             ->toArray();
     }
 

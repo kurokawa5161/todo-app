@@ -939,11 +939,39 @@
             const gantData = @json($gantData);
 
             // ガントチャート初期化
-            if (gantData.length > 0) {
+            if (gantData && gantData.length > 0) {
                 try {
+                    // データ検証
+                    console.log('Gantt data:', gantData.length, 'tasks');
+
+                    // 不正なデータをフィルタリング
+                    const validData = gantData.filter(task => {
+                        if (!task.start || !task.end) {
+                            console.warn('Invalid task (missing dates):', task);
+                            return false;
+                        }
+                        const start = new Date(task.start);
+                        const end = new Date(task.end);
+                        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                            console.warn('Invalid task (invalid dates):', task);
+                            return false;
+                        }
+                        if (start > end) {
+                            console.warn('Invalid task (start > end):', task);
+                            return false;
+                        }
+                        return true;
+                    });
+
+                    if (validData.length === 0) {
+                        document.getElementById('gantt').innerHTML =
+                            '<p class="text-gray-500 dark:text-gray-400 p-4">有効なタスクデータがありません。</p>';
+                        return;
+                    }
+
                     // カテゴリー色をカスタムCSSとして動的追加
                     const categoryColors = new Map();
-                    gantData.forEach(task => {
+                    validData.forEach(task => {
                         if (task.custom_class && task.category_color) {
                             categoryColors.set(task.custom_class, task.category_color);
                         }
@@ -960,24 +988,21 @@
                         document.head.appendChild(styleElement);
                     }
 
-                    // Frappe Ganttの初期化（オプション設定付き）
-                    const gantt = new Gantt("#gantt", gantData, {
-                        view_mode: 'Week', // デフォルトビュー：Week（他: Day, Month, Year）
-                        date_format: 'YYYY-MM-DD',
-                        language: 'ja',
+                    // Frappe Ganttの初期化
+                    const gantt = new Gantt("#gantt", validData, {
+                        view_mode: 'Week',
                         bar_height: 30,
                         bar_corner_radius: 3,
                         padding: 18,
-                        view_modes: ['Day', 'Week', 'Month'],
                         custom_popup_html: function(task) {
                             const startDate = new Date(task._start);
                             const endDate = new Date(task._end);
-                            const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                            const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
                             return `
                                 <div class="gantt-popup">
                                     <div class="font-bold text-sm mb-1">${task.name}</div>
-                                    <div class="text-xs text-gray-600">
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">
                                         <div>開始: ${task.start}</div>
                                         <div>終了: ${task.end}</div>
                                         <div>期間: ${duration}日</div>
@@ -988,12 +1013,13 @@
                         }
                     });
 
-                    console.log('Gantt chart initialized successfully with', gantData.length, 'tasks');
+                    console.log('✅ Gantt chart initialized:', validData.length, 'tasks');
                 } catch (error) {
-                    console.error('Gantt initialization error:', error);
+                    console.error('❌ Gantt initialization error:', error);
+                    console.error('Error stack:', error.stack);
                     document.getElementById('gantt').innerHTML =
-                        '<p class="text-red-500 dark:text-red-400 p-4">ガントチャートの初期化に失敗しました: ' +
-                        error.message + '</p>';
+                        '<p class="text-red-500 dark:text-red-400 p-4">ガントチャートの初期化に失敗しました。<br>' +
+                        'エラー: ' + error.message + '</p>';
                 }
             } else {
                 document.getElementById('gantt').innerHTML =
