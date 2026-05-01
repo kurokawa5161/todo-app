@@ -966,54 +966,53 @@
                     if (validData.length === 0) {
                         document.getElementById('gantt').innerHTML =
                             '<p class="text-gray-500 dark:text-gray-400 p-4">有効なタスクデータがありません。</p>';
-                        return;
-                    }
-
-                    // カテゴリー色をカスタムCSSとして動的追加
-                    const categoryColors = new Map();
-                    validData.forEach(task => {
-                        if (task.custom_class && task.category_color) {
-                            categoryColors.set(task.custom_class, task.category_color);
-                        }
-                    });
-
-                    if (categoryColors.size > 0) {
-                        const styleElement = document.createElement('style');
-                        let cssRules = '';
-                        categoryColors.forEach((color, className) => {
-                            cssRules += `.${className} .bar { fill: ${color} !important; }\n`;
-                            cssRules += `.${className} .bar-progress { fill: ${color} !important; opacity: 0.8; }\n`;
+                    } else {
+                        // カテゴリー色をカスタムCSSとして動的追加
+                        const categoryColors = new Map();
+                        validData.forEach(task => {
+                            if (task.custom_class && task.category_color) {
+                                categoryColors.set(task.custom_class, task.category_color);
+                            }
                         });
-                        styleElement.textContent = cssRules;
-                        document.head.appendChild(styleElement);
-                    }
 
-                    // Frappe Ganttの初期化
-                    const gantt = new Gantt("#gantt", validData, {
-                        view_mode: 'Week',
-                        bar_height: 30,
-                        bar_corner_radius: 3,
-                        padding: 18,
-                        custom_popup_html: function(task) {
-                            const startDate = new Date(task._start);
-                            const endDate = new Date(task._end);
-                            const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-                            return `
-                                <div class="gantt-popup">
-                                    <div class="font-bold text-sm mb-1">${task.name}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400">
-                                        <div>開始: ${task.start}</div>
-                                        <div>終了: ${task.end}</div>
-                                        <div>期間: ${duration}日</div>
-                                        <div>進捗: ${task.progress}%</div>
-                                    </div>
-                                </div>
-                            `;
+                        if (categoryColors.size > 0) {
+                            const styleElement = document.createElement('style');
+                            let cssRules = '';
+                            categoryColors.forEach((color, className) => {
+                                cssRules += `.${className} .bar { fill: ${color} !important; }\n`;
+                                cssRules += `.${className} .bar-progress { fill: ${color} !important; opacity: 0.8; }\n`;
+                            });
+                            styleElement.textContent = cssRules;
+                            document.head.appendChild(styleElement);
                         }
-                    });
 
-                    console.log('✅ Gantt chart initialized:', validData.length, 'tasks');
+                        // Frappe Ganttの初期化
+                        const gantt = new Gantt("#gantt", validData, {
+                            view_mode: 'Week',
+                            bar_height: 30,
+                            bar_corner_radius: 3,
+                            padding: 18,
+                            custom_popup_html: function(task) {
+                                const startDate = new Date(task._start);
+                                const endDate = new Date(task._end);
+                                const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+                                return `
+                                    <div class="gantt-popup">
+                                        <div class="font-bold text-sm mb-1">${task.name}</div>
+                                        <div class="text-xs text-gray-600 dark:text-gray-400">
+                                            <div>開始: ${task.start}</div>
+                                            <div>終了: ${task.end}</div>
+                                            <div>期間: ${duration}日</div>
+                                            <div>進捗: ${task.progress}%</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        });
+
+                        console.log('✅ Gantt chart initialized:', validData.length, 'tasks');
+                    }
                 } catch (error) {
                     console.error('❌ Gantt initialization error:', error);
                     console.error('Error stack:', error.stack);
