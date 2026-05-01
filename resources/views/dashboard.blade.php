@@ -35,7 +35,7 @@
         }
 
         .gantt-container {
-            background: transparent !important;
+            background: #f9fafb !important;
         }
 
         /* ガントチャートのポップアップスタイル */
@@ -52,18 +52,27 @@
             color: #f3f4f6;
         }
 
-        /* ガントチャートのグリッド線 */
+        /* ガントチャートのグリッド線（背景を白系で統一） */
         .gantt .grid-row,
         .gantt .grid-header {
-            fill: transparent;
+            fill: #f9fafb !important;
         }
 
         .gantt .grid-row:hover {
-            fill: rgba(0, 0, 0, 0.05);
+            fill: #f3f4f6 !important;
+        }
+
+        .dark .gantt-container {
+            background: #1f2937 !important;
+        }
+
+        .dark .gantt .grid-row,
+        .dark .gantt .grid-header {
+            fill: #1f2937 !important;
         }
 
         .dark .gantt .grid-row:hover {
-            fill: rgba(255, 255, 255, 0.05);
+            fill: #374151 !important;
         }
 
         /* ガントチャートのテキスト */
@@ -75,6 +84,15 @@
         .dark .gantt .lower-text,
         .dark .gantt .upper-text {
             fill: #f3f4f6;
+        }
+
+        /* グリッド線を薄く */
+        .gantt .grid-tick {
+            stroke: #e5e7eb !important;
+        }
+
+        .dark .gantt .grid-tick {
+            stroke: #4b5563 !important;
         }
     </style>
 
