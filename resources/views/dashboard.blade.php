@@ -28,6 +28,54 @@
             fill: #94a3b8 !important;
             opacity: 0.8;
         }
+
+        /* ガントチャート全体のスタイル */
+        #gantt {
+            overflow: visible !important;
+        }
+
+        .gantt-container {
+            background: transparent !important;
+        }
+
+        /* ガントチャートのポップアップスタイル */
+        .gantt-popup {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+        }
+
+        .dark .gantt-popup {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+
+        /* ガントチャートのグリッド線 */
+        .gantt .grid-row,
+        .gantt .grid-header {
+            fill: transparent;
+        }
+
+        .gantt .grid-row:hover {
+            fill: rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .gantt .grid-row:hover {
+            fill: rgba(255, 255, 255, 0.05);
+        }
+
+        /* ガントチャートのテキスト */
+        .gantt .lower-text,
+        .gantt .upper-text {
+            fill: #374151;
+        }
+
+        .dark .gantt .lower-text,
+        .dark .gantt .upper-text {
+            fill: #f3f4f6;
+        }
     </style>
 
     <div class="py-6">
@@ -893,32 +941,63 @@
             // ガントチャート初期化
             if (gantData.length > 0) {
                 try {
-                    // カテゴリー別の色マッピングを作成
-                    const categoryColors = {};
+                    // カテゴリー色をカスタムCSSとして動的追加
+                    const categoryColors = new Map();
                     gantData.forEach(task => {
-                        if (task.custom_class && task.color) {
-                            categoryColors[task.custom_class] = task.color;
+                        if (task.custom_class && task.category_color) {
+                            categoryColors.set(task.custom_class, task.category_color);
                         }
                     });
 
-                    // カスタムCSSを動的に追加
-                    let styleElement = document.createElement('style');
-                    let cssRules = '';
-                    for (const [category, color] of Object.entries(categoryColors)) {
-                        cssRules += `.bar[data-custom-class="${category}"] { fill: ${color} !important; }\n`;
+                    if (categoryColors.size > 0) {
+                        const styleElement = document.createElement('style');
+                        let cssRules = '';
+                        categoryColors.forEach((color, className) => {
+                            cssRules += `.${className} .bar { fill: ${color} !important; }\n`;
+                            cssRules += `.${className} .bar-progress { fill: ${color} !important; opacity: 0.8; }\n`;
+                        });
+                        styleElement.textContent = cssRules;
+                        document.head.appendChild(styleElement);
                     }
-                    styleElement.textContent = cssRules;
-                    document.head.appendChild(styleElement);
 
-                    const gantt = new Gantt("#gantt", gantData);
-                    console.log('Gantt initialized successfully');
+                    // Frappe Ganttの初期化（オプション設定付き）
+                    const gantt = new Gantt("#gantt", gantData, {
+                        view_mode: 'Week', // デフォルトビュー：Week（他: Day, Month, Year）
+                        date_format: 'YYYY-MM-DD',
+                        language: 'ja',
+                        bar_height: 30,
+                        bar_corner_radius: 3,
+                        padding: 18,
+                        view_modes: ['Day', 'Week', 'Month'],
+                        custom_popup_html: function(task) {
+                            const startDate = new Date(task._start);
+                            const endDate = new Date(task._end);
+                            const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+                            return `
+                                <div class="gantt-popup">
+                                    <div class="font-bold text-sm mb-1">${task.name}</div>
+                                    <div class="text-xs text-gray-600">
+                                        <div>開始: ${task.start}</div>
+                                        <div>終了: ${task.end}</div>
+                                        <div>期間: ${duration}日</div>
+                                        <div>進捗: ${task.progress}%</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    console.log('Gantt chart initialized successfully with', gantData.length, 'tasks');
                 } catch (error) {
-                    console.error('Gantt error:', error);
-                    document.getElementById('gantt').innerHTML = '<p class="text-red-500">ガントチャートの初期化に失敗しました: ' + error
-                        .message + '</p>';
+                    console.error('Gantt initialization error:', error);
+                    document.getElementById('gantt').innerHTML =
+                        '<p class="text-red-500 dark:text-red-400 p-4">ガントチャートの初期化に失敗しました: ' +
+                        error.message + '</p>';
                 }
             } else {
-                document.getElementById('gantt').innerHTML = '<p class="text-gray-500 dark:text-gray-400">表示するタスクがありません</p>';
+                document.getElementById('gantt').innerHTML =
+                    '<p class="text-gray-500 dark:text-gray-400 p-4">表示するタスクがありません。タスクを追加すると、ここにタイムラインが表示されます。</p>';
             }
         </script>
     @endpush
