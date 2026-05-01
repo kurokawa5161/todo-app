@@ -92,4 +92,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(NotificationSetting::class);
     }
+
+    public function templates()
+    {
+        return $this->hasMany(ExportTemplate::class);
+    }
 }

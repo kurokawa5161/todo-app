@@ -30,11 +30,13 @@
                     <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')">
                         ⚙️ 設定
                     </x-nav-link>
-                    @if(app()->environment('local') || auth()->user()->email === 'kurokawa@gmail.com')
                     <x-nav-link :href="route('dev.database')" :active="request()->routeIs('dev.database')">
                         🗄️ Database
                     </x-nav-link>
-                    @endif
+                    <x-nav-link :href="route('export-templates.index')" :active="request()->routeIs('export-templates.*')">
+                        📋 テンプレート
+                    </x-nav-link>
+
                 </div>
             </div>
 
@@ -126,10 +128,10 @@
             <x-responsive-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')">
                 ⚙️ 設定
             </x-responsive-nav-link>
-            @if(app()->environment('local') || auth()->user()->email === 'kurokawa@gmail.com')
-            <x-responsive-nav-link :href="route('dev.database')" :active="request()->routeIs('dev.database')">
-                🗄️ Database
-            </x-responsive-nav-link>
+            @if (app()->environment('local') || auth()->user()->email === 'kurokawa@gmail.com')
+                <x-responsive-nav-link :href="route('dev.database')" :active="request()->routeIs('dev.database')">
+                    🗄️ Database
+                </x-responsive-nav-link>
             @endif
         </div>
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\TodoController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExportTemplateController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\SavedSearchController;
 use App\Http\Controllers\ProfileController;
@@ -191,6 +192,18 @@ Route::get('/dev/database', function () {
 })->name('dev.database');
 
 
+// ========================================
+// テンプレート管理
+// ========================================
+Route::prefix('export-templates')->name('export-templates.')->middleware('auth')->group(function () {
+    Route::get('/', [ExportTemplateController::class, 'index'])->name('index');
+    Route::get('/create', [ExportTemplateController::class, 'create'])->name('create');
+    Route::post('/', [ExportTemplateController::class, 'store'])->name('store');
+    Route::get('/{template}/edit', [ExportTemplateController::class, 'edit'])->name('edit');
+    Route::put('/{template}', [ExportTemplateController::class, 'update'])->name('update');
+    Route::delete('/{template}', [ExportTemplateController::class, 'destroy'])->name('destroy');
+    Route::get('/{template}/export', [ExportTemplateController::class, 'export'])->name('export');
+});
 
 // ========================================
 // デバッグ用ルート
