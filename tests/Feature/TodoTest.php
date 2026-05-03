@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Todo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -108,6 +109,9 @@ class TodoTest extends TestCase
 
     public function test_自分のTodoは削除できる()
     {
+        //Observer無効化
+        Todo::unsetEventDispatcher();
+
         $owner = User::factory()->create();
 
         $todo = $owner->todos()->create([
