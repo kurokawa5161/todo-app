@@ -5,87 +5,214 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\Todo;
+use App\Models\User;
 
 class GitHubService
 {
-    protected $token;
-    protected $enabled;
-
     /**
-     * Create a new class instance.
+     * GitHubイベントを処理
+     *
+     * @param string $event GitHubイベント名 (issues, pull_request, push等)
+     * @param array $payload Webhookペイロード
+     * @return array 処理結果
      */
-    public function __construct()
+    public function handleEvent(string $event, array $payload): array
     {
-        $this->token = config('services.github.token');
-        $this->enabled = !empty($this->token);
+        return match ($event) {
+            'issues' => $this->handleIssue($payload),
+            'pull_request' => $this->handlePullRequest($payload),
+            'push' => $this->handlePush($payload),
+            default => ['message' => "Unsupported event: {$event}"]
+        };
     }
 
+    /**
+     * GitHub Issueイベントを処理
+     *
+     * @param array $payload Issueペイロード
+     * @return array 処理結果
+     */
+    protected function handleIssue(array $payload): array
+    {
+        $action = $payload['action'] ?? 'unknown';
+        $issue =  $payload['issue'] ?? [];
+
+        if ($action === 'opened') {
+            return $this->createTodoFromIssue($issue);
+        }
+
+        if ($action === 'closed') {
+            return $this->completeTodoFromIssue($issue);
+        }
+
+        if ($action === 'edited') {
+            return $this->updateTodoFromIssue($issue);
+        }
+
+        if ($action === 'assigned') {
+            return $this->assignTodoFromIssue($issue, $payload);
+        }
+
+        return ['message' => "Issue {$action}"];
+    }
 
     /**
-     * IssueからTodo作成
+     * GitHub IssueからTodoを作成
+     *
+     * @param array $issue Issueデータ
+     * @return array 作成結果
      */
-    public function createTodoFromIssue(array $issueData)
+    protected function createTodoFromIssue(array $issue): array
     {
-        $todo = new Todo();
-        $todo->user_id = auth()->id() ?? 1; // Webhook経由の場合はuser_id=1
-        $todo->title = $issueData['title'];
-        $todo->content = $issueData['body'] ?? '';
-        $todo->end_date = now()->addDays(7);
-        $todo->priority = $this->getPriorityFromLabels($issueData['labels'] ?? []);
-        $todo->github_issue_url = $issueData['html_url'];
-        $todo->save();
-
-        Log::info('Todo created from GitHub Issue', [
-            'todo_id' => $todo->id,
-            'issue_url' => $issueData['html_url']
+        $user = auth()->user();
+        if (!$user) {
+            return ['message' => 'User not authenticated'];
+        }
+        $todo = Todo::create([
+            'user_id' => $user->id,
+            'title' => '[GitHub] ' . ($issue['title'] ?? 'Untitled'),
+            'content' => $issue['body'] ?? '',
+            'github_issue_url' => $issue['html_url'] ?? null,
+            'priority' => 2,
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDays(7)->format('Y-m-d'),
         ]);
 
-        return $todo;
+        return [
+            'message' => "Created Todo from GitHub Issue",
+            'todo_id' => $todo->id
+        ];
     }
 
     /**
-     * Issueをクローズ
+     * GitHub Issue完了時にTodoを完了
+     *
+     * @param array $issue Issueデータ
+     * @return array 完了結果
      */
-    public function closeIssue(string $issueUrl)
+    protected function completeTodoFromIssue(array $issue): array
     {
-        if (!$this->enabled) {
-            Log::info('GitHub token not set, skipping issue close', [
-                'url' => $issueUrl
-            ]);
-            return false;
+        $issueUrl = $issue['html_url'] ?? null;
+
+        if (!$issueUrl) {
+            return ['message' => 'No issue URL found'];
         }
 
-        //IssueURLからowner/repo/number を抽出
-        preg_match('#github\.com/([^/]+)/([^/]+)/issues/(\d+)#', $issueUrl, $matches);
-        if (count($matches) !== 4) {
-            return false;
+        $todo = Todo::where('github_issue_url', $issueUrl)
+            ->whereNull('completed_at')
+            ->first();
+
+        if ($todo) {
+            $todo->update(['completed_at' => now()]);
+            return ['message' => "Completed Todo (ID: {$todo->id})"];
         }
 
-        [$full, $owner, $repo, $number] = $matches;
-
-        $response = Http::withToken($this->token)
-            ->patch("https://api.github.com/repos/{$owner}/{$repo}/issues/{$number}", [
-                'state' => 'closed'
-            ]);
-
-        Log::info('Github issue closed', [
-            'url' => $issueUrl,
-            'success' => $response->successful()
-        ]);
-
-        return $response->successful();
+        return ['message' => 'No matching Todo found'];
     }
 
     /**
-     * ラベルから優先度を判定
+     * GitHub Issue編集時にTodoを更新
+     *
+     * @param array $issue Issueデータ
+     * @return array 更新結果
      */
-    public function getPriorityFromLabels(array $labels)
+    protected function updateTodoFromIssue(array $issue): array
     {
-        foreach ($labels as $label) {
-            $name = is_array($label) ? $label['name'] : $label;
-            if (in_array($name, ['high', 'urgent', 'critical'])) return 1;
-            if (in_array($name, ['low'])) return 3;
+        $issueUrl = $issue['html_url'] ?? null;
+
+        if (!$issueUrl) {
+            return ['message' => 'No issue URL found'];
         }
-        return 2;
+
+        $todo = Todo::where('github_issue_url', $issueUrl)->first();
+
+        if ($todo) {
+            $todo->update([
+                'title' => '[GitHub] ' . ($issue['title'] ?? $todo->title),
+                'content' => $issue['body'] ?? $todo->content,
+            ]);
+            return [
+                'message' => "Updated Todo (ID: {$todo->id})",
+                'todo_id' => $todo->id
+            ];
+        }
+
+        return ['message' => 'No matching Todo found'];
+    }
+
+    /**
+     * GitHub Issue担当者割り当て時にTodoの担当者を設定
+     *
+     * @param array $issue Issueデータ
+     * @param array $payload 完全なペイロード
+     * @return array 割り当て結果
+     */
+    protected function assignTodoFromIssue(array $issue, array $payload): array
+    {
+        $issueUrl = $issue['html_url'] ?? null;
+
+        if (!$issueUrl) {
+            return ['message' => 'No issue URL found'];
+        }
+
+        $todo = Todo::where('github_issue_url', $issueUrl)->first();
+
+        if (!$todo) {
+            return ['message' => 'No matching Todo found'];
+        }
+
+        $assignee = $payload['assignee'] ?? null;
+
+        if (!$assignee) {
+            return ['message' => 'No assignee information found'];
+        }
+
+        $assigneeLogin = $assignee['login'] ?? null;
+
+        if ($assigneeLogin) {
+            $assignedUser = User::where('email', $assigneeLogin . '@example.com')->first();
+
+            if ($assignedUser) {
+                $todo->update(['assigned_to' => $assignedUser->id]);
+                return [
+                    'message' => "Assigned Todo (ID: {$todo->id}) to {$assignedUser->name}",
+                    'todo_id' => $todo->id,
+                    'assigned_to' => $assignedUser->id
+                ];
+            }
+        }
+
+        return [
+            'message' => "Todo found but user '{$assigneeLogin}' not found in system",
+            'todo_id' => $todo->id
+        ];
+    }
+
+    /**
+     * GitHub Pull Requestイベントを処理
+     *
+     * @param array $payload Pull Requestペイロード
+     * @return array 処理結果
+     */
+    protected function handlePullRequest(array $payload): array
+    {
+        $action = $payload['action'] ?? 'Unknown';
+        $pr = $payload['pull_request'] ?? [];
+
+        return ['message' => "Pull Request {$action}: " . ($pr['title'] ?? '')];
+    }
+
+    /**
+     * GitHub Pushイベントを処理
+     *
+     * @param array $payload Pushペイロード
+     * @return array 処理結果
+     */
+    protected function handlePush(array $payload): array
+    {
+        $commits = count($payload['commits'] ?? []);
+        $ref = $payload['ref'] ?? 'unknown';
+
+        return ['message' => "Push: {$commits} commits to {$ref}"];
     }
 }

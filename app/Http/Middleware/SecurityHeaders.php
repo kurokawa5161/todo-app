@@ -23,8 +23,8 @@ class SecurityHeaders
         $response->headers->set(
             'Content-Security-Policy',
             "default-src 'self';" .
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' {$viteUrl} https://cdn.jsdelivr.net;" .
-                "style-src 'self' 'unsafe-inline' {$viteUrl} https://fonts.bunny.net https://cdn.jsdelivr.net;" .
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' {$viteUrl} https://cdn.jsdelivr.net https://cdn.tailwindcss.com;" .
+                "style-src 'self' 'unsafe-inline' {$viteUrl} https://fonts.bunny.net https://cdn.jsdelivr.net https://cdn.tailwindcss.com;" .
                 "img-src 'self' data: https:;" .
                 "font-src 'self' data: https://fonts.bunny.net;" .
                 "connect-src 'self' ws: wss: {$viteUrl} https://cdn.jsdelivr.net;"

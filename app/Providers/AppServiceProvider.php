@@ -16,6 +16,7 @@ use App\Models\Tag;
 use App\Models\Category;
 use App\Models\User;
 use App\Observers\UserObserver;
+use App\Observers\TodoObserver;
 use App\Policies\TodoPolicy;
 use App\Policies\SavedSearchPolicy;
 use App\Policies\TagPolicy;
@@ -37,8 +38,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Scout設定：本番環境ではデータベース検索を使用
-        if (app()->environment('production') && !config('scout.driver')) {
+        // Scout設定：Meilisearchが使えない環境ではデータベース検索を使用
+        if (!config('scout.driver') || config('scout.driver') === 'meilisearch') {
+            // Meilisearchサーバーが起動していない場合はDatabase検索に切り替え
             config(['scout.driver' => 'database']);
         }
 
@@ -93,5 +95,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         User::observe(UserObserver::class);
+
+        Todo::observe(TodoObserver::class);
     }
 }

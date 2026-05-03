@@ -33,10 +33,12 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+        'webhook_secret' => env('SLACK_WEBHOOK_SECRET')
     ],
 
     'github' => [
-        'token' => env('GITHUB_TOKEN')
+        'token' => env('GITHUB_TOKEN'),
+        'webhook_secret' => env('GITHUB_WEBHOOK_SECRET')
     ],
 
 ];

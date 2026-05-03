@@ -102,4 +102,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(DashboardWidget::class);
     }
+
+    public function IntegrationLogs()
+    {
+        return $this->hasMany(IntegrationLog::class);
+    }
 }

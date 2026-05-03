@@ -14,9 +14,11 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\GitHubWebhookController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\DashboardWidgetController;
+use App\Http\Controllers\SlackWebhookController;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\TodoDeadlineNotification;
 use App\Models\Todo;
+use App\Models\IntegrationLog;
 use Illuminate\Support\Facades\Log;
 
 // ========================================
@@ -25,11 +27,6 @@ use Illuminate\Support\Facades\Log;
 Route::get('/', function () {
     return view('welcome');
 });
-
-// ========================================
-// GitHub Webhook（CSRF除外済み）
-// ========================================
-Route::post('/webhook/github', [GitHubWebhookController::class, 'handleWebhook']);
 
 // ========================================
 // Todo管理
@@ -75,8 +72,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/export/excel', [DashboardController::class, 'exportExcel'])->name('dashboard.export.excel');
     Route::get('/dashboard/export/json', [DashboardController::class, 'exportJson'])->name('dashboard.export.json');
     Route::get('/dashboard/export/xml', [DashboardController::class, 'exportXml'])->name('dashboard.export.xml');
-
-
 
     //カレンダー
     Route::get('/todos/{todo}/export-calendar', [TodoController::class, 'exportCalendar'])->name('todos.export-calendar');
@@ -256,3 +251,25 @@ Route::get('/debug-sql-todo/{id}', function ($id) {
         'from_model' => Todo::find($id),
     ]);
 })->middleware('auth');
+
+// ========================================
+// Integration Test（Slack/GitHub連携テスト）
+// ========================================
+Route::middleware('auth')->group(function () {
+    // テストページ
+    Route::get('/integration-test', function () {
+        return view('integration-test');
+    })->name('integration.test');
+
+    // 連携ログ取得API
+    Route::get('/integration-logs', function () {
+        $logs = IntegrationLog::with('user')->latest()->limit(10)->get();
+        return response()->json($logs);
+    })->name('integration.logs');
+});
+
+// Slack Webhook（認証不要、CSRF除外）
+Route::post('/slack/commands', [SlackWebhookController::class, 'handleCommand'])
+    ->middleware('web');
+Route::post('/github/webhook', [GitHubWebhookController::class, 'handleWebhook'])
+    ->middleware('web');

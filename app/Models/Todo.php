@@ -12,6 +12,7 @@ class Todo extends Model
     use Searchable;
 
     protected $fillable = [
+        'user_id',
         'title',
         'content',
         'start_date',
@@ -24,7 +25,7 @@ class Todo extends Model
         'image_path',
         'team_id',
         'github_issue_url',
-        //'assigned_to'
+        'assigned_to'
     ];
 
     protected $casts = [
