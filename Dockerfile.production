@@ -1,0 +1,98 @@
+# ===================================
+# Stage 1: Composer Dependencies
+# ===================================
+FROM composer:2.7 AS composer-builder
+
+WORKDIR /app
+
+# composer.json と composer.lock のみコピー（キャッシュ最適化）
+COPY composer.json composer.lock ./
+
+# 本番用依存関係インストール
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist \
+    --ignore-platform-reqs
+
+# アプリケーションコードをコピー
+COPY . .
+
+# オートローダー最適化
+RUN composer dump-autoload --optimize --classmap-authoritative
+
+# ===================================
+# Stage 2: Node.js Assets Build
+# ===================================
+FROM node:20-alpine AS node-builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ===================================
+# Stage 3: Production Runtime
+# ===================================
+FROM php:8.3-fpm-alpine
+
+# 作業ディレクトリ
+WORKDIR /var/www/html
+
+# 必要な拡張機能のみインストール
+RUN apk add --no-cache \
+    libpng \
+    libjpeg-turbo \
+    libwebp \
+    freetype \
+    mysql-client \
+    && apk add --no-cache --virtual .build-deps \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    libwebp-dev \
+    freetype-dev \
+    && docker-php-ext-configure gd \
+    --with-freetype \
+    --with-jpeg \
+    --with-webp \
+    && docker-php-ext-install -j$(nproc) \
+    pdo_mysql \
+    bcmath \
+    gd \
+    opcache \
+    && apk del .build-deps
+
+# OPcache設定（本番環境向け）
+RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini
+
+# 非rootユーザー作成
+RUN addgroup -g 1000 -S www && \
+    adduser -u 1000 -S www -G www
+
+# composer依存関係をコピー
+COPY --from=composer-builder --chown=www:www /app/vendor /var/www/html/vendor
+COPY --from=composer-builder --chown=www:www /app/composer.json /app/composer.lock /var/www/html/
+
+# Node.jsビルド成果物をコピー
+COPY --from=node-builder --chown=www:www /app/public/build /var/www/html/public/build
+
+# アプリケーションコードをコピー
+COPY --chown=www:www . /var/www/html
+
+# ディレクトリパーミッション設定
+RUN chown -R www:www /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# 非rootユーザーに切り替え
+USER www
+
+EXPOSE 9000
+
+CMD ["php-fpm"]

@@ -1,0 +1,159 @@
+version: '3.8'
+
+services:
+  # PHP-FPM
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: todo-app-prod
+    restart: unless-stopped
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=base64:xsOBk7OZh1md0rgbzX4nJzqcxLZSoZvA4euGhJPkKfM=
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_DATABASE=todo_app
+      - DB_USERNAME=todo_user
+      - DB_PASSWORD=todo_password
+      - CACHE_DRIVER=file
+      - CACHE_STORE=file
+      - SESSION_DRIVER=file
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis_password
+    networks:
+      - todo-prod
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: todo-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ./docker/nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./public:/var/www/html/public:ro
+    networks:
+      - todo-prod
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MySQL
+  db:
+    image: mysql:8.0
+    container_name: todo-db-prod
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: todo_app
+      MYSQL_USER: todo_user
+      MYSQL_PASSWORD: todo_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - db-prod-data:/var/lib/mysql
+    networks:
+      - todo-prod
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: todo-redis-prod
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis_password
+    volumes:
+      - redis-prod-data:/data
+    networks:
+      - todo-prod
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Queue Worker
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: todo-queue-prod
+    restart: unless-stopped
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=base64:xsOBk7OZh1md0rgbzX4nJzqcxLZSoZvA4euGhJPkKfM=
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_DATABASE=todo_app
+      - DB_USERNAME=todo_user
+      - DB_PASSWORD=todo_password
+      - CACHE_DRIVER=file
+      - CACHE_STORE=file
+      - SESSION_DRIVER=file
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis_password
+    networks:
+      - todo-prod
+    depends_on:
+      - db
+      - redis
+
+  # Scheduler
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: todo-scheduler-prod
+    restart: unless-stopped
+    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=base64:xsOBk7OZh1md0rgbzX4nJzqcxLZSoZvA4euGhJPkKfM=
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_DATABASE=todo_app
+      - DB_USERNAME=todo_user
+      - DB_PASSWORD=todo_password
+      - CACHE_DRIVER=file
+      - CACHE_STORE=file
+      - SESSION_DRIVER=file
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redis_password
+    networks:
+      - todo-prod
+    depends_on:
+      - db
+      - redis
+
+networks:
+  todo-prod:
+    driver: bridge
+
+volumes:
+  db-prod-data:
+  redis-prod-data:
