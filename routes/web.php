@@ -15,6 +15,7 @@ use App\Http\Controllers\GitHubWebhookController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\DashboardWidgetController;
 use App\Http\Controllers\SlackWebhookController;
+use App\Http\Controllers\HealthCheckController;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\TodoDeadlineNotification;
 use App\Models\Todo;
@@ -27,6 +28,11 @@ use Illuminate\Support\Facades\Log;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// ========================================
+// ヘルスチェック
+// ========================================
+Route::get('/health', HealthCheckController::class);
 
 // ========================================
 // Todo管理
@@ -213,7 +219,6 @@ Route::prefix('dashboard/widgets')->name('dashboard.widgets.')->middleware('auth
     Route::patch('/{dashboardWidget}/toggle', [DashboardWidgetController::class, 'toggle'])->name('toggle');
     Route::patch('/reset', [DashboardWidgetController::class, 'reset'])->name('reset');
 });
-
 
 // ========================================
 // デバッグ用ルート

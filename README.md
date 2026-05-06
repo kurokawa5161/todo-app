@@ -1,6 +1,6 @@
 # Laravel Todo App
 
-Laravel学習用のTodoアプリケーション。**Phase 23完了**（External Service Integration - Slack/GitHub Webhook統合）。
+Laravel学習用のTodoアプリケーション。**Phase 24A完了**（CI/CD強化 & Docker最適化）。
 
 ## 機能
 
@@ -84,6 +84,27 @@ Laravel学習用のTodoアプリケーション。**Phase 23完了**（External 
   - Edge（WNS経由）
 - ✅ 通知設定UI（ユーザーごとにON/OFF可能）
 
+### DevOps・CI/CD（Phase 24A完了）
+- ✅ Multi-stage Docker build
+  - Composer依存関係ビルド
+  - Node.js アセットビルド（Vite）
+  - 本番環境ランタイム（PHP-FPM、OPcache最適化）
+- ✅ Docker Compose本番環境構成
+  - PHP-FPM（非rootユーザー実行）
+  - Nginx（リバースプロキシ、静的ファイルキャッシュ）
+  - MySQL 8.0（ヘルスチェック付き）
+  - Redis（永続化設定）
+  - Queue Worker（自動再起動）
+  - Scheduler（cron代替）
+- ✅ GitHub Actions CI/CD
+  - 自動ビルド・テスト
+  - Docker layer キャッシュ最適化
+  - Docker Compose 統合テスト
+  - ヘルスチェック確認
+- ✅ Monitoring & Logging
+  - `/health` エンドポイント（データベース・キャッシュ確認）
+  - Docker コンテナログ管理
+
 ## 技術スタック
 
 - **Backend**: Laravel 11, PHP 8.3
@@ -125,32 +146,55 @@ php artisan serve
 
 ## Docker使用
 
-### 起動
+### 開発環境（docker-compose.yml）
 
 ```bash
 # コンテナビルド・起動
-docker-compose up -d
+docker compose up -d
 
 # マイグレーション実行
-docker-compose exec app php artisan migrate
+docker compose exec app php artisan migrate
 
 # ダミーデータ投入
-docker-compose exec app php artisan db:seed
+docker compose exec app php artisan db:seed
 
 # アクセス
 # http://localhost:8080
 ```
 
-### 停止
+### 本番環境テスト（docker-compose.prod.yml）
+
+**Phase 24A で実装した本番環境構成をテスト：**
 
 ```bash
-docker-compose down
+# イメージビルド・起動（初回 or コード変更時）
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
+
+# マイグレーション実行
+docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
+
+# ダミーデータ投入
+docker compose -f docker-compose.prod.yml exec app php artisan db:seed
+
+# ヘルスチェック確認
+curl http://localhost:8081/health
+
+# アクセス
+# http://localhost:8081
 ```
 
-### コンテナ削除（データも削除）
+### 停止・削除
 
 ```bash
-docker-compose down -v
+# 停止
+docker compose down
+# または
+docker compose -f docker-compose.prod.yml down
+
+# コンテナ削除（データも削除）
+docker compose down -v
+docker compose -f docker-compose.prod.yml down -v
 ```
 
 ## API使用方法
@@ -235,11 +279,16 @@ MIT License
 - ✅ Phase 20: チーム機能
 - ✅ Phase 21: エクスポート機能拡張
 - ✅ Phase 22: ダッシュボードカスタマイズ
-- ✅ **Phase 23: 外部サービス統合（Slack/GitHub）**
+- ✅ Phase 23: 外部サービス統合（Slack/GitHub）
   - Part A: テーブル設計
   - Part B: Slack統合
   - Part C: GitHub統合
   - Part D: Webhook署名検証
+- ✅ **Phase 24A: CI/CD強化 & Docker最適化**
+  - Part A: Multi-stage Docker build（3段階ビルド、最適化）
+  - Part B: Docker Compose本番環境構成（MySQL、Redis、Nginx、Queue、Scheduler）
+  - Part C: GitHub Actions CI/CD pipeline（自動ビルド・テスト、キャッシュ最適化）
+  - Part D: Monitoring & Logging（ヘルスチェックエンドポイント）
 
 ## Webhook設定（本番環境）
 
