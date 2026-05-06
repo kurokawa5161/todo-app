@@ -1,0 +1,64 @@
+name: Docker Build & Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker Image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile.production
+        push: false
+        tags: todo-app:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Create .env file for testing
+      run: |
+        echo "APP_ENV=local" > .env
+        echo "APP_DEBUG=true" >> .env
+        echo "APP_KEY=base64:xsOBk7OZh1md0rgbzX4nJzqcxLZSoZvA4euGhJPkKfM=" >> .env
+        echo "DB_CONNECTION=mysql" >> .env
+        echo "DB_HOST=db" >> .env
+        echo "DB_DATABASE=todo_app" >> .env
+        echo "DB_USERNAME=todo_user" >> .env
+        echo "DB_PASSWORD=todo_password" >> .env
+        echo "CACHE_STORE=file" >> .env
+        echo "SESSION_DRIVER=file" >> .env
+
+    - name: Start Docker Compose
+      run: docker compose -f docker-compose.prod.yml up -d
+
+    - name: Wait for services to be healthy
+      run: |
+        timeout 60 bash -c 'until docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; do sleep 2; done'
+
+    - name: Run migrations
+      run: docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force
+
+    - name: Check application health
+      run: |
+        sleep 5
+        curl -f http://localhost:8081 || exit 1
+
+    - name: Show logs on failure
+      if: failure()
+      run: docker compose -f docker-compose.prod.yml logs
+
+    - name: Stop Docker Compose
+      if: always()
+      run: docker compose -f docker-compose.prod.yml down -v
+
