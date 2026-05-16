@@ -34,7 +34,7 @@ class SavedSearchController extends Controller
         $savedSearch->save();
 
         //キャッシュ削除
-        Cache::forget('user_' . auth()->id() . '_saved_searches');
+        Cache::tags(['user:' . auth()->id(), 'saved_searches'])->flush();
 
         return redirect()->route('todos.index');
     }
@@ -57,7 +57,7 @@ class SavedSearchController extends Controller
         $savedSearch->delete();
 
         //キャッシュ削除
-        Cache::forget('user_' . auth()->id() . '_saved_searches');
+        Cache::tags(['user:' . auth()->id(), 'saved_searches'])->flush();
 
         return redirect()->route('todos.index');
     }

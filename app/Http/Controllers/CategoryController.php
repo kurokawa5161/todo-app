@@ -11,7 +11,11 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = auth()->user()->categories()->orderBy('created_at', 'asc')->get();
+        $categories = Cache::tags(['user:' . auth()->id(), 'categories'])
+            ->remember('user_categories', 3600, function () {
+                return auth()->user()->categories()->get();
+            });
+
         $data = [
             'categories' => $categories,
         ];
@@ -26,8 +30,8 @@ class CategoryController extends Controller
         $category->color = $request->color;
         $category->save();
 
-        //キャッシュ削除
-        Cache::forget('user_' . auth()->id() . '_categories');
+        //削除
+        Cache::tags(['user:' . auth()->id(), 'categories'])->flush();
 
         return redirect()->route('categories.index');
     }
@@ -39,8 +43,8 @@ class CategoryController extends Controller
 
         $category->delete();
 
-        //キャッシュ削除
-        Cache::forget('user_' . auth()->id() . '_categories');
+        //削除
+        Cache::tags(['user:' . auth()->id(), 'categories'])->flush();
 
         return redirect()->route('categories.index');
     }

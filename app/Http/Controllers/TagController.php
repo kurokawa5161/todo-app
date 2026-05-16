@@ -42,7 +42,7 @@ class TagController extends Controller
         $tag->save();
 
         //キャッシュ削除
-        Cache::forget('user_' . auth()->id() . '_tags');
+        Cache::tags(['user:' . auth()->id(), 'tags'])->flush();
 
         return redirect()->route('tags.index');
     }
@@ -58,7 +58,7 @@ class TagController extends Controller
         $tag->delete();
 
         //キャッシュ削除
-        Cache::forget('user_' . auth()->id() . '_tags');
+        Cache::tags(['user:' . auth()->id(), 'tags'])->flush();
 
         return redirect()->route('tags.index');
     }

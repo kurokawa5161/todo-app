@@ -22,21 +22,23 @@ class DashboardController extends Controller
     {
         $userId = auth()->id();
         //統計データは１時間キャッシュ
-        $weeklyData = Cache::remember("weekly_data_{$userId}", 3600, function () {
+        $weeklyData = Cache::remember("weekly_data_{$userId}", 86400, function () {
             return $this->getWeeklyCompletionData();
         });
-        $monthlyData = Cache::remember("monthly_data_{$userId}", 3600, function () {
+        $monthlyData = Cache::remember("monthly_data_{$userId}", 604800, function () {
             return $this->getMonthlyCompletionData();
         });
-        $yearlyData = Cache::remember("yearly_data_{$userId}", 3600, function () {
+        $yearlyData = Cache::remember("yearly_data_{$userId}", 604800, function () {
             return $this->getYearlyCompletionData();
         });
-        $heatmapData = Cache::remember("heatmap_data_{$userId}", 3600, function () {
+        $heatmapData = Cache::remember("heatmap_data_{$userId}", 300, function () {
             return $this->getHeatmapData();
         });
-        $gantData = Cache::remember("gant_data_{$userId}", 3600, function () {
+        $gantData = Cache::remember("gant_data_{$userId}", 300, function () {
             return $this->getgantData();
         });
+
+
 
         //総Todo数、完了数、未完了数
         $total = Todo::where('user_id', auth()->id())->count();

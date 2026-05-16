@@ -169,19 +169,23 @@ class TodoController extends Controller
         }
 
         //カテゴリ
-        $categories = Cache::remember('user_' . auth()->id() . '_categories', 3600, function () {
-            return auth()->user()->categories()->orderBy('created_at', 'asc')->get();
-        });
+        $categories = Cache::tags(['user:' . auth()->id(), 'categories'])
+            ->remember('user_categories', 3600, function () {
+                return auth()->user()->categories()->get();
+            });
 
         //タグ
-        $tags = Cache::remember('user_' . auth()->id() . '_tags', 3600, function () {
-            return auth()->user()->tags()->orderBy('created_at', 'asc')->get();
-        });
+        $tags = Cache::tags(['user:' . auth()->id(), 'tags'])
+            ->remember('user_tags', 3600, function () {
+                return auth()->user()->tags()->OrderBy('created_at', 'asc')->get();
+            });
 
         //検索条件
-        $savedSearches = Cache::remember('user_' . auth()->id() . '_saved_searches', 3600, function () {
-            return auth()->user()->savedSearches()->orderBy('created_at', 'asc')->get();
-        });
+        $savedSearches = Cache::tags(['user:' . auth()->id(), 'saved_searches'])
+            ->remember('user_saved_searches', 3600, function () {
+                return auth()->user()->savedSearches()->orderBy('created_at', 'asc')->get();
+            });
+
 
         //すべて・完了済・未完了の件数
         $counts = auth()->user()->todos()->selectRaw(
@@ -251,6 +255,9 @@ class TodoController extends Controller
         }
         $todo->team_id = $request->team_id;
         $todo->save();
+
+        //削除
+        Cache::tags(['user:' . auth()->id()])->flush();
 
         //アラート
         event(new TodoCreated($todo));
@@ -366,6 +373,9 @@ class TodoController extends Controller
 
         $todo->save();
 
+        //削除
+        Cache::tags(['user:' . auth()->id()])->flush();
+
         //アラート
         event(new TodoUpdated($todo));
         //Slack通知
@@ -442,6 +452,9 @@ class TodoController extends Controller
         event(new TodoDeleted($todo));
 
         $todo->delete();
+
+        //削除
+        Cache::tags(['user:' . auth()->id()])->flush();
 
         //リダイレクト先を条件分岐
         if ($todo->team_id) {
