@@ -20,7 +20,8 @@
         "laravel/scout": "*",
         "laravel/tinker": "^2.10.1",
         "meilisearch/meilisearch-php": "*",
-        "phpoffice/phpspreadsheet": "*"
+        "phpoffice/phpspreadsheet": "*",
+        "predis/predis": "*"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "*",
