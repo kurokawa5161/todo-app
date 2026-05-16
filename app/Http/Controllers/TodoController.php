@@ -102,7 +102,14 @@ class TodoController extends Controller
                 ['path' => request()->url(), 'query' => request()->query()]
             );
 
-            $items->load(['category', 'children', 'tags']);
+            $items->load([
+                'category',
+                'children.category',
+                'children.tags',
+                'tags',
+                'user',
+                'assignedUser'
+            ]);
 
             //検索履歴を保存（空でない場合のみ）
             $keyword = trim($request->q);
@@ -114,7 +121,16 @@ class TodoController extends Controller
                 ]);
             }
         } else {
-            $query = $user->todos()->whereNull('parent_id')->with(['category', 'children', 'tags']);
+            $query = $user->todos()
+                ->whereNull('parent_id')
+                ->with([
+                    'category',
+                    'children.category',
+                    'children.tags',
+                    'tags',
+                    'user',
+                    'assignedUser'
+                ]);
 
             // ========================================
             // 絞り込み条件
@@ -275,7 +291,13 @@ class TodoController extends Controller
             $this->authorize('update', $todo);
         }
 
-        $todo->load('comments.user');
+        $todo->load([
+            'comments.user',
+            'category',
+            'tags',
+            'assignedUser',
+            'user'
+        ]);
 
         // カテゴリとタグの取得
         if ($todo->team_id && $team) {
