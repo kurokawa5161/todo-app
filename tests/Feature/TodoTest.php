@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Todo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class TodoTest extends TestCase
@@ -219,5 +220,79 @@ class TodoTest extends TestCase
         $response = $this->actingAs($other)->patch("/todos/{$todo->id}/pin");
         $response->assertNotFound();
         $this->assertDatabaseMissing('todos', ['is_pinned' => $update['is_pinned']]);
+    }
+
+    public function test_Todo作成後にキャッシュがフラッシュされる()
+    {
+        $user = User::factory()->create();
+
+        // キャッシュを事前に設定
+        Cache::tags(['user:' . $user->id])
+            ->put('test_cache', 'test_value', 3600);
+
+        $this->actingAs($user)->post('/todos', [
+            'title' => 'Laravel勉強',
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-12-31'
+        ]);
+
+        // キャッシュがフラッシュされていることを確認
+        $cached = Cache::tags(['user:' . $user->id])
+            ->get('test_cache');
+
+        $this->assertNull($cached);
+    }
+
+    public function test_Todo更新後にキャッシュがフラッシュされる()
+    {
+        $user = User::factory()->create();
+        $todo = $user->todos()->create([
+            'title' => '更新元',
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-12-31',
+            'priority' => 2
+        ]);
+
+        // キャッシュを事前に設定
+        Cache::tags(['user:' . $user->id])
+            ->put('test_cache', 'test_value', 3600);
+
+        $this->actingAs($user)->put("/todos/{$todo->id}", [
+            'title' => '更新後',
+            'priority' => 2,
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-04-18'
+        ]);
+
+        // キャッシュがフラッシュされていることを確認
+        $cached = Cache::tags(['user:' . $user->id])
+            ->get('test_cache');
+
+        $this->assertNull($cached);
+    }
+
+    public function test_Todo削除後にキャッシュがフラッシュされる()
+    {
+        // Observer無効化
+        Todo::unsetEventDispatcher();
+
+        $user = User::factory()->create();
+        $todo = $user->todos()->create([
+            'title' => '削除対象',
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-12-31'
+        ]);
+
+        // キャッシュを事前に設定
+        Cache::tags(['user:' . $user->id])
+            ->put('test_cache', 'test_value', 3600);
+
+        $this->actingAs($user)->delete("/todos/{$todo->id}");
+
+        // キャッシュがフラッシュされていることを確認
+        $cached = Cache::tags(['user:' . $user->id])
+            ->get('test_cache');
+
+        $this->assertNull($cached);
     }
 }

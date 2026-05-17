@@ -30,7 +30,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // 開発環境でのみTelescopeを有効化（本番ビルドエラー回避）
+        if ($this->app->environment('local')) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+        }
     }
 
     /**
@@ -92,6 +95,16 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('password-reset', function (Request $request) {
             return Limit::perMinute(3)->by($request->email . $request->ip());
+        });
+
+        // 一般的なWebルート用（認証済みユーザー）
+        RateLimiter::for('web', function (Request $request) {
+            return Limit::perMinute(100)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Todo CRUD操作用
+        RateLimiter::for('todos', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
         User::observe(UserObserver::class);

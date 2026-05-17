@@ -37,7 +37,7 @@ Route::get('/health', HealthCheckController::class);
 // ========================================
 // Todo管理
 // ========================================
-Route::prefix('todos')->name('todos.')->middleware('auth')->group(function () {
+Route::prefix('todos')->name('todos.')->middleware(['auth', 'throttle:todos'])->group(function () {
     Route::get('/', [TodoController::class, 'index'])->name('index');
     Route::post('/', [TodoController::class, 'store'])->name('store');
     Route::get('/{todo}/edit', [TodoController::class, 'edit'])->name('edit');
@@ -53,13 +53,13 @@ Route::prefix('todos')->name('todos.')->middleware('auth')->group(function () {
 // ダッシュボード
 // ========================================
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'throttle:web'])
     ->name('dashboard');
 
 // ========================================
 // プロフィール・エクスポート・通知API
 // ========================================
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'throttle:web'])->group(function () {
     //プロフィール
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -97,7 +97,7 @@ require __DIR__ . '/auth.php';
 // ========================================
 // カテゴリー管理
 // ========================================
-Route::prefix('categories')->name('categories.')->middleware('auth')->group(function () {
+Route::prefix('categories')->name('categories.')->middleware(['auth', 'throttle:web'])->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->name('index');
     Route::post('/', [CategoryController::class, 'store'])->name('store');
     Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
@@ -106,7 +106,7 @@ Route::prefix('categories')->name('categories.')->middleware('auth')->group(func
 // ========================================
 // コメント機能
 // ========================================
-Route::name('comments.')->middleware('auth')->group(function () {
+Route::name('comments.')->middleware(['auth', 'throttle:web'])->group(function () {
     Route::post('/todos/{todo}/comments', [CommentController::class, 'store'])->name('store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('destroy');
 });
@@ -114,7 +114,7 @@ Route::name('comments.')->middleware('auth')->group(function () {
 // ========================================
 // タグ管理
 // ========================================
-Route::prefix('tags')->name('tags.')->middleware('auth')->group(function () {
+Route::prefix('tags')->name('tags.')->middleware(['auth', 'throttle:web'])->group(function () {
     Route::get('/', [TagController::class, 'index'])->name('index');
     Route::post('/', [TagController::class, 'store'])->name('store');
     Route::delete('/{tag}', [TagController::class, 'destroy'])->name('destroy');
@@ -123,7 +123,7 @@ Route::prefix('tags')->name('tags.')->middleware('auth')->group(function () {
 // ========================================
 // 保存済み検索条件
 // ========================================
-Route::prefix('saved-searches')->name('saved-searches.')->middleware('auth')->group(function () {
+Route::prefix('saved-searches')->name('saved-searches.')->middleware(['auth', 'throttle:web'])->group(function () {
     Route::post('/', [SavedSearchController::class, 'store'])->name('store');
     Route::get('/{savedSearch}/apply', [SavedSearchController::class, 'apply'])->name('apply');
     Route::delete('/{savedSearch}', [SavedSearchController::class, 'destroy'])->name('destroy');
@@ -132,7 +132,7 @@ Route::prefix('saved-searches')->name('saved-searches.')->middleware('auth')->gr
 // ========================================
 // チーム機能
 // ========================================
-Route::prefix('teams')->name('teams.')->middleware('auth')->group(function () {
+Route::prefix('teams')->name('teams.')->middleware(['auth', 'throttle:web'])->group(function () {
     Route::get('/', [TeamController::class, 'index'])->name('index');
     Route::post('/', [TeamController::class, 'store'])->name('store');
     Route::get('/{team}', [TeamController::class, 'show'])->name('show');
