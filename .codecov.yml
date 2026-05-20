@@ -1,0 +1,54 @@
+# Codecov Configuration
+# https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  precision: 2  # カバレッジ表示の小数点以下桁数
+  round: down   # 切り捨て
+  range: "70...100"  # カバレッジ範囲（70%以下は赤、100%は緑）
+
+  status:
+    project:
+      default:
+        target: 80%  # プロジェクト全体の目標カバレッジ
+        threshold: 1%  # 1%以上下がった場合は失敗
+        if_ci_failed: error  # CIが失敗した場合はエラー
+
+    patch:
+      default:
+        target: 80%  # 新規追加コードの目標カバレッジ
+        threshold: 1%
+
+# PRへのコメント設定
+comment:
+  layout: "header, diff, files, footer"
+  behavior: default  # 新規コメント or 既存コメント更新
+  require_changes: false  # 変更がなくてもコメント
+  require_base: no  # ベースブランチがなくてもコメント
+  require_head: yes  # HEADブランチが必要
+
+# カバレッジ対象のパス
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        paths:
+          - "app/"  # appディレクトリのみ対象
+
+# 無視するファイル/ディレクトリ
+ignore:
+  - "tests/"
+  - "vendor/"
+  - "node_modules/"
+  - "bootstrap/cache/"
+  - "storage/"
+  - "public/"
+  - "resources/"
+  - "database/migrations/"
+  - "database/seeders/"
+  - "config/"
+  - "routes/"
+
+# 通知設定（オプション）
+# Slack、Email等への通知を設定可能
+# https://docs.codecov.com/docs/notifications
