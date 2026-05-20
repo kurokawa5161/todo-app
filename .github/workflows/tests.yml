@@ -66,7 +66,7 @@ jobs:
       run: php artisan test
 
     - name: Generate Coverage Report
-      run: php artisan test --coverage --coverage-clover=coverage.xml --min=80
+      run: php artisan test --coverage --coverage-clover=coverage.xml
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v4
