@@ -63,7 +63,7 @@ class SendWeeklyReports extends Command
                 ->get()
                 ->map(fn($todo) => [
                     'title' => $todo->title,
-                    'end_date' => $todo->end_dat?e->format('Y-m-d'),
+                    'end_date' => $todo->end_date->format('Y-m-d'),
                 ])
                 ->toArray();
 
