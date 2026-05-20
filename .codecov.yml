@@ -1,5 +1,6 @@
 # Codecov Configuration
 # https://docs.codecov.com/docs/codecov-yaml
+# Updated: 2026-05-20
 
 coverage:
   precision: 2  # カバレッジ表示の小数点以下桁数
