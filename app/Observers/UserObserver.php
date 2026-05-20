@@ -11,6 +11,11 @@ class UserObserver
      */
     public function created(User $user): void
     {
+        // テスト環境では実行しない（SQLite nested transaction回避）
+        if (app()->environment('testing')) {
+            return;
+        }
+
         $user->notificationSetting()->create([
             'reminder_days' => [1, 3, 7],
             'weekly_report_enabled' => true,

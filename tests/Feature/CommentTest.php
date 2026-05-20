@@ -63,9 +63,12 @@ class CommentTest extends TestCase
         $commenter = User::factory()->create();
         $todo = Todo::factory()->create(['user_id' => $owner->id]);
 
-        $this->actingAs($commenter)->post("/todos/{$todo->id}/comments", [
+        $response = $this->actingAs($commenter)->post("/todos/{$todo->id}/comments", [
             'body' => 'これはテストコメントです'
         ]);
+
+        // コメント作成が成功したことを確認
+        $response->assertRedirect();
 
         // 通知が送信されたことを確認
         Notification::assertSentTo(

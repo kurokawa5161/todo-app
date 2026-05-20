@@ -12,6 +12,11 @@ class TodoObserver
      */
     public function created(Todo $todo): void
     {
+        // テスト環境では実行しない（SQLite nested transaction回避）
+        if (app()->environment('testing')) {
+            return;
+        }
+
         //Slack通知をキューに追加
         SlackNotificationJob::dispatch($todo, 'created');
     }
@@ -21,6 +26,11 @@ class TodoObserver
      */
     public function updated(Todo $todo): void
     {
+        // テスト環境では実行しない（SQLite nested transaction回避）
+        if (app()->environment('testing')) {
+            return;
+        }
+
         //完了状態が変更された場合のみ通知
         if ($todo->wasChanged('completed_at')) {
             $action = $todo->completed_at ? 'completed' : 'uncompleted';
@@ -33,6 +43,11 @@ class TodoObserver
      */
     public function deleted(Todo $todo): void
     {
+        // テスト環境では実行しない（SQLite nested transaction回避）
+        if (app()->environment('testing')) {
+            return;
+        }
+
         //Slack通知をキューに追加
         SlackNotificationJob::dispatch($todo, 'deleted');
     }

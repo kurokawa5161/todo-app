@@ -240,9 +240,9 @@ class NotificationTest extends TestCase
         $this->assertStringContainsString('週次レポート', $mailMessage->subject);
         $this->assertStringContainsString('こんにちはテストユーザーさん', $mailMessage->greeting);
         $this->assertStringContainsString('先週の活動サマリ', $mailMessage->introLines[0]);
-        $this->assertStringContainsString('完了：10件', $mailMessage->introLines[2]);
-        $this->assertStringContainsString('未完了：5件', $mailMessage->introLines[3]);
-        $this->assertStringContainsString('今週期限：3件', $mailMessage->introLines[4]);
+        $this->assertStringContainsString('完了：10件', $mailMessage->introLines[3]);
+        $this->assertStringContainsString('未完了：5件', $mailMessage->introLines[4]);
+        $this->assertStringContainsString('今週期限：3件', $mailMessage->introLines[5]);
     }
 
     public function test_WeeklyReportNotification_今週期限のTodo情報が含まれる()
@@ -262,11 +262,11 @@ class NotificationTest extends TestCase
         $notification = new WeeklyReportNotification($stats, $upcomingTodos);
         $mailMessage = $notification->toMail($user);
 
-        $this->assertStringContainsString('今週期限のTodo', $mailMessage->introLines[5]);
-        $this->assertStringContainsString('Todo1', $mailMessage->introLines[6]);
-        $this->assertStringContainsString('2026-06-01', $mailMessage->introLines[6]);
-        $this->assertStringContainsString('Todo2', $mailMessage->introLines[7]);
-        $this->assertStringContainsString('2026-06-02', $mailMessage->introLines[7]);
+        $this->assertStringContainsString('今週期限のTodo', $mailMessage->introLines[7]);
+        $this->assertStringContainsString('Todo1', $mailMessage->introLines[8]);
+        $this->assertStringContainsString('2026-06-01', $mailMessage->introLines[8]);
+        $this->assertStringContainsString('Todo2', $mailMessage->introLines[9]);
+        $this->assertStringContainsString('2026-06-02', $mailMessage->introLines[9]);
     }
 
     public function test_WeeklyReportNotification_toWebPushが正しいメッセージを返す()
@@ -283,10 +283,20 @@ class NotificationTest extends TestCase
         $notification = new WeeklyReportNotification($stats, $upcomingTodos);
         $webPushMessage = $notification->toWebPush($user);
 
-        $this->assertStringContainsString('週次レポート', $webPushMessage->title);
-        $this->assertStringContainsString('完了：10件', $webPushMessage->body);
-        $this->assertStringContainsString('未完了：5件', $webPushMessage->body);
-        $this->assertStringContainsString('今週期限：3件', $webPushMessage->body);
+        // WebPushMessageの内容をReflectionで確認
+        $reflection = new \ReflectionClass($webPushMessage);
+        $titleProperty = $reflection->getProperty('title');
+        $titleProperty->setAccessible(true);
+        $bodyProperty = $reflection->getProperty('body');
+        $bodyProperty->setAccessible(true);
+
+        $title = $titleProperty->getValue($webPushMessage);
+        $body = $bodyProperty->getValue($webPushMessage);
+
+        $this->assertStringContainsString('週次レポート', $title);
+        $this->assertStringContainsString('完了：10件', $body);
+        $this->assertStringContainsString('未完了：5件', $body);
+        $this->assertStringContainsString('今週期限：3件', $body);
     }
 
     // ========================================

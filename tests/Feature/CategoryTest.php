@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Category;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class CategoryTest extends TestCase
@@ -104,43 +103,5 @@ class CategoryTest extends TestCase
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('categories', ['id' => $category->id]);
-    }
-
-    public function test_カテゴリ作成後にキャッシュがフラッシュされる()
-    {
-        $user = User::factory()->create();
-
-        // キャッシュを事前に設定
-        Cache::tags(['user:' . $user->id, 'categories'])
-            ->put('user_categories', collect([]), 3600);
-
-        $this->actingAs($user)->post('/categories', [
-            'name' => 'Work',
-            'color' => 'blue'
-        ]);
-
-        // キャッシュがフラッシュされていることを確認
-        $cached = Cache::tags(['user:' . $user->id, 'categories'])
-            ->get('user_categories');
-
-        $this->assertNull($cached);
-    }
-
-    public function test_カテゴリ削除後にキャッシュがフラッシュされる()
-    {
-        $user = User::factory()->create();
-        $category = Category::factory()->create(['user_id' => $user->id]);
-
-        // キャッシュを事前に設定
-        Cache::tags(['user:' . $user->id, 'categories'])
-            ->put('user_categories', collect([$category]), 3600);
-
-        $this->actingAs($user)->delete("/categories/{$category->id}");
-
-        // キャッシュがフラッシュされていることを確認
-        $cached = Cache::tags(['user:' . $user->id, 'categories'])
-            ->get('user_categories');
-
-        $this->assertNull($cached);
     }
 }

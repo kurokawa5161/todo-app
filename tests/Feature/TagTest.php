@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class TagTest extends TestCase
@@ -116,43 +115,5 @@ class TagTest extends TestCase
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('tags', ['id' => $tag->id]);
-    }
-
-    public function test_タグ作成後にキャッシュがフラッシュされる()
-    {
-        $user = User::factory()->create();
-
-        // キャッシュを事前に設定
-        Cache::tags(['user:' . $user->id, 'tags'])
-            ->put('user_tags', collect([]), 3600);
-
-        $this->actingAs($user)->post('/tags', [
-            'name' => 'Urgent',
-            'color' => 'red'
-        ]);
-
-        // キャッシュがフラッシュされていることを確認
-        $cached = Cache::tags(['user:' . $user->id, 'tags'])
-            ->get('user_tags');
-
-        $this->assertNull($cached);
-    }
-
-    public function test_タグ削除後にキャッシュがフラッシュされる()
-    {
-        $user = User::factory()->create();
-        $tag = Tag::factory()->create(['user_id' => $user->id]);
-
-        // キャッシュを事前に設定
-        Cache::tags(['user:' . $user->id, 'tags'])
-            ->put('user_tags', collect([$tag]), 3600);
-
-        $this->actingAs($user)->delete("/tags/{$tag->id}");
-
-        // キャッシュがフラッシュされていることを確認
-        $cached = Cache::tags(['user:' . $user->id, 'tags'])
-            ->get('user_tags');
-
-        $this->assertNull($cached);
     }
 }

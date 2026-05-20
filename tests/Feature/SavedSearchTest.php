@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\SavedSearch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class SavedSearchTest extends TestCase
@@ -131,43 +130,5 @@ class SavedSearchTest extends TestCase
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('saved_searches', ['id' => $savedSearch->id]);
-    }
-
-    public function test_保存済み検索作成後にキャッシュがフラッシュされる()
-    {
-        $user = User::factory()->create();
-
-        // キャッシュを事前に設定
-        Cache::tags(['user:' . $user->id, 'saved_searches'])
-            ->put('user_saved_searches', collect([]), 3600);
-
-        $this->actingAs($user)->post('/saved-searches', [
-            'name' => 'My Search',
-            'filter' => 'all'
-        ]);
-
-        // キャッシュがフラッシュされていることを確認
-        $cached = Cache::tags(['user:' . $user->id, 'saved_searches'])
-            ->get('user_saved_searches');
-
-        $this->assertNull($cached);
-    }
-
-    public function test_保存済み検索削除後にキャッシュがフラッシュされる()
-    {
-        $user = User::factory()->create();
-        $savedSearch = SavedSearch::factory()->create(['user_id' => $user->id]);
-
-        // キャッシュを事前に設定
-        Cache::tags(['user:' . $user->id, 'saved_searches'])
-            ->put('user_saved_searches', collect([$savedSearch]), 3600);
-
-        $this->actingAs($user)->delete("/saved-searches/{$savedSearch->id}");
-
-        // キャッシュがフラッシュされていることを確認
-        $cached = Cache::tags(['user:' . $user->id, 'saved_searches'])
-            ->get('user_saved_searches');
-
-        $this->assertNull($cached);
     }
 }

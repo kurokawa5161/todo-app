@@ -74,7 +74,7 @@ class TodoDeadlineNotification extends Notification implements ShouldQueue
         return [
             'todo_id' =>  $this->todo->id,
             'todo_title' => $this->todo->title,
-            'end_date' => $this->todo->end_date,
+            'end_date' => Carbon::parse($this->todo->end_date)->format('Y-m-d'),
             'days_before' => $this->daysBefore
         ];
     }

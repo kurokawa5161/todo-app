@@ -58,6 +58,12 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('todo', function ($value) {
             $todo = Todo::findOrFail($value);
 
+            // コメント作成時は他人のTodoもアクセス可能（Policyで制御）
+            $currentRoute = request()->route()->getName();
+            if ($currentRoute === 'comments.store') {
+                return $todo;
+            }
+
             //個人Todo＝自分の実
             if (!$todo->team_id) {
                 if ($todo->user_id !== auth()->id()) {
@@ -73,10 +79,10 @@ class AppServiceProvider extends ServiceProvider
             abort(404);
         });
         Route::bind('category', function ($value) {
-            return auth()->user()->categories()->findOrFail($value);
+            return Category::findOrFail($value);
         });
         Route::bind('comment', function ($value) {
-            return Comment::where('user_id', auth()->id())->findOrFail($value);
+            return Comment::findOrFail($value);
         });
 
         RateLimiter::for('api', function (Request $request) {
