@@ -2,7 +2,10 @@
 
 use App\Models\User;
 use App\Models\Category;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Dusk\Browser;
+
+uses(RefreshDatabase::class);
 
 test('user can create a todo', function () {
     $user = User::factory()->create();

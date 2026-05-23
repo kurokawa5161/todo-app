@@ -1,7 +1,10 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Dusk\Browser;
+
+uses(RefreshDatabase::class);
 
 test('user can login', function () {
     $user = User::factory()->create([
