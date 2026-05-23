@@ -99,6 +99,102 @@ php artisan dusk --without-tty
 
 ---
 
+## Phase 29-C: パフォーマンステスト ✨ NEW
+
+**完了日**: 2026-05-23  
+**テスト数**: 8テストケース（7 passed）
+
+### 📊 実施内容
+
+1. **N+1クエリ検出テスト**
+   - Eager loading使用時のクエリ数検証
+   - CategoryとTodoの関連データ取得最適化
+   - Lazy loading防止機能の確認
+
+2. **スロークエリ検出テスト**
+   - Todo検索クエリのパフォーマンス（< 100ms）
+   - 関連データ含むクエリの最適化（< 200ms）
+   - クエリ実行時間の計測
+
+3. **メモリ使用量テスト**
+   - ページネーション使用時のメモリ効率（< 5MB）
+   - chunk()による大量データ処理（< 10MB）
+   - 500-1000件のデータ処理効率
+
+4. **クエリ最適化テスト**
+   - TodoController indexの最小クエリ数（≤ 5クエリ）
+   - Eager loadingによるN+1問題防止
+   - ページネーション + Eager loading最適化
+
+### 🧪 パフォーマンステスト実行コマンド
+
+```powershell
+# パフォーマンステストを実行
+php artisan test --filter=PerformanceTest
+
+# 詳細な出力で実行
+php artisan test --filter=PerformanceTest -v
+```
+
+### 📁 追加されたファイル
+
+- `tests/Feature/PerformanceTest.php` - パフォーマンステスト（8テストケース）
+  - N+1クエリ検出（3テスト）
+  - スロークエリ検出（2テスト）
+  - メモリ使用量（2テスト）
+  - クエリ最適化（1テスト）
+
+### ✅ テスト結果
+
+| テストケース | 結果 | 詳細 |
+|------------|------|------|
+| N+1クエリ検出（Eager loading使用） | ✅ Pass | ≤ 5クエリ |
+| CategoryとTodoのEager loading | ✅ Pass | ≤ 2クエリ |
+| Lazy loading防止 | ⚠️ Skip | Lazy loading無効化済み（良い設定） |
+| Todo検索クエリ速度 | ✅ Pass | < 100ms |
+| 関連データ取得クエリ速度 | ✅ Pass | < 200ms |
+| ページネーションメモリ使用量 | ✅ Pass | < 5MB |
+| chunk()処理効率 | ✅ Pass | < 10MB |
+| TodoController最小クエリ数 | ✅ Pass | ≤ 5クエリ |
+
+### 🔍 パフォーマンス監視
+
+**Telescope活用:**
+- `/telescope/queries` - スロークエリの検出
+- `/telescope/requests` - リクエスト処理時間
+- `/telescope/models` - モデルイベント監視
+
+### ⚠️ 注意事項
+
+- **Lazy Loading無効化**: アプリケーションでLazy loadingが無効化されているため、N+1問題が自動的に防止されます
+- **テスト環境**: SQLiteインメモリデータベースを使用
+- **パフォーマンス基準**: 実際の本番環境では、データ量やサーバースペックに応じて調整が必要
+
+### 📈 パフォーマンス改善の指針
+
+1. **常にEager loadingを使用**
+   ```php
+   Todo::with(['category', 'tags', 'comments'])->get();
+   ```
+
+2. **ページネーションの活用**
+   ```php
+   Todo::paginate(15); // 一度に全件取得しない
+   ```
+
+3. **大量データはchunk()で処理**
+   ```php
+   Todo::chunk(100, function ($todos) {
+       // 100件ずつ処理
+   });
+   ```
+
+4. **クエリ数の監視**
+   - Telescopeで`/telescope/queries`を確認
+   - 開発環境でDB::enableQueryLog()を使用
+
+---
+
 ## Phase 26-28: テストカバレッジ改善・セキュリティ強化
 
 このドキュメントは、Phase 26-28で追加されたテストとカバレッジレポートの生成方法を説明します。
