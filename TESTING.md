@@ -37,6 +37,68 @@
 
 ---
 
+## Phase 29-B: E2Eテスト（Laravel Dusk） ✨ NEW
+
+**完了日**: 2026-05-23  
+**テスト数**: 8テストケース
+
+### 📊 実施内容
+
+1. **Laravel Dusk導入**
+   - `laravel/dusk` v8.6.0インストール
+   - ChromeDriver v149.0.7827.22自動インストール
+   - `.env.dusk.local` 環境設定ファイル作成
+
+2. **ブラウザテスト作成**
+   - **LoginTest**: ログインフローテスト（3テストケース）
+     - ログイン成功
+     - ログアウト
+     - 無効な認証情報でログイン失敗
+   - **TodoTest**: Todoフローテスト（5テストケース）
+     - Todo作成
+     - Todo詳細表示
+     - Todo完了マーク
+     - Todo削除
+     - カテゴリフィルタリング
+
+### 🧪 E2Eテスト実行コマンド
+
+```powershell
+# すべてのDuskテストを実行
+php artisan dusk
+
+# 特定のテストファイルを実行
+php artisan dusk tests/Browser/LoginTest.php
+php artisan dusk tests/Browser/TodoTest.php
+
+# ヘッドレスモードで実行（バックグラウンド）
+php artisan dusk --without-tty
+```
+
+### 📁 追加されたファイル
+
+- `tests/Browser/LoginTest.php` - ログイン関連のE2Eテスト
+- `tests/Browser/TodoTest.php` - Todo機能のE2Eテスト
+- `tests/Browser/ExampleTest.php` - サンプルテスト（Dusk生成）
+- `tests/Browser/Pages/` - Pageオブジェクトディレクトリ
+- `.env.dusk.local` - Dusk用環境設定
+
+### ⚠️ 注意事項
+
+- **ChromeDriverバージョン**: 自動的にインストールされたChromeDriverが、システムにインストールされているChromeブラウザと互換性がある必要があります
+- **APP_URL**: `.env.dusk.local`で設定されたURL（`http://todo-app.test`）にアクセスできる必要があります
+- **テスト環境**: SQLiteインメモリデータベースを使用
+- **セレクタ調整**: 実際のUI構造に応じて、テスト内のセレクタを調整する必要がある場合があります
+
+### 📈 次のステップ
+
+- UI実装に合わせてセレクタを調整
+- より複雑なユーザーフローのテスト追加
+- JavaScriptインタラクションのテスト追加
+- スクリーンショット保存機能の活用
+
+---
+
 ## Phase 26-28: テストカバレッジ改善・セキュリティ強化
 
 このドキュメントは、Phase 26-28で追加されたテストとカバレッジレポートの生成方法を説明します。
