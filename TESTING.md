@@ -463,3 +463,110 @@ Todo::unsetEventDispatcher();
 - [Laravel Testing Documentation](https://laravel.com/docs/11.x/testing)
 - [PHPUnit Documentation](https://docs.phpunit.de/)
 - [Pest PHP](https://pestphp.com/) - 代替テストフレームワーク
+
+---
+
+## Phase 29-D: コンポーネントテスト追加（カバレッジ向上）
+
+**実施日**: 2026-05-23  
+**目標**: カバレッジを21.95%から60-80%に向上
+
+### 追加したテストファイル
+
+#### 1. CommandTest.php
+**場所**: `tests/Feature/CommandTest.php`  
+**テスト数**: 8 (7 passed, 1 failed)
+
+| テストケース | 内容 |
+|---|---|
+| `deadline notification command sends notifications` | 3日前通知が送信される |
+| `deadline notification command supports custom reminder days` | カスタム通知日数（1, 3, 7日）対応 |
+| `deadline notification command does not send for completed todos` | 完了済みTodoには通知されない |
+| `deadline notification command uses default 3 days` | デフォルト3日前通知 |
+| `weekly report command sends reports` | 週次レポート送信（有効化ユーザーのみ） |
+| `weekly report command calculates correct statistics` | 統計情報計算（completed, pending, upcoming） |
+| `weekly report command includes upcoming todos data` | 今週期限Todoデータ含む |
+| `weekly report command does not send if setting is null` | 設定なしは送信しない |
+
+**コマンドテスト**: `SendDeadlineNotifications`, `SendWeeklyReports`
+
+#### 2. ControllerTest.php
+**場所**: `tests/Feature/ControllerTest.php`  
+**テスト数**: 25 (15 passed, 10 failed - route設定待ち)
+
+| コントローラー | テスト内容 |
+|---|---|
+| **TeamController** | チーム一覧、作成（Ownerロール）、詳細、更新、削除 |
+| **ExportTemplateController** | テンプレート一覧、作成、バリデーション、更新、削除 |
+| **DashboardController** | 統計表示、デフォルトウィジェット作成、CSV/JSONエクスポート |
+| **ProfileController** | プロフィール表示・更新、メール変更時の検証リセット、アカウント削除 |
+| **CommentController** | コメント作成、通知送信（他人のTodoのみ）、削除 |
+
+#### 3. ApiControllerTest.php
+**場所**: `tests/Feature/ApiControllerTest.php`  
+**テスト数**: 17 (all passed ✅)
+
+| API エンドポイント | テスト内容 |
+|---|---|
+| **AuthController** | ログイン（トークン発行）、ログアウト、バリデーション |
+| **TodoController (index)** | ページネーション、カテゴリフィルタ、ステータスフィルタ |
+| **TodoController (CRUD)** | 作成、取得、更新、削除 + バリデーション |
+| **TodoController (Bulk)** | 一括削除、一括更新、一括完了 |
+| **Authorization** | 認証必須、所有権チェック |
+
+#### 4. ComponentTest.php
+**場所**: `tests/Feature/ComponentTest.php`  
+**テスト数**: 19 (all passed ✅)
+
+| コンポーネント | テスト内容 |
+|---|---|
+| **SlackService** | コマンドパース（add, list, help）、Todo追加、一覧表示 |
+| **GitHubService** | Issueイベント処理（opened → Todo作成）、認証チェック |
+| **UserObserver** | NotificationSetting自動作成（testing環境ではスキップ） |
+| **TodoObserver** | Slack通知ディスパッチ（testing環境ではスキップ） |
+| **TodoResource** | JSON変換、カテゴリ・タグ・サブタスク含む、画像URLパス変換 |
+| **Events** | TodoCreated, TodoUpdated, TodoDeleted イベントディスパッチ |
+
+### テスト実行結果
+
+```bash
+php artisan test
+
+Tests:    11 failed, 2 skipped, 188 passed (645 assertions)
+Duration: 11.50s
+```
+
+**合計**: 201テスト（Phase 29-D で 69テスト追加）
+
+### 追加ファイル
+
+1. **Factory**: `database/factories/NotificationSettingFactory.php`
+2. **Model更新**: `app/Models/NotificationSetting.php` - HasFactoryトレイト追加
+3. **Model更新**: `app/Models/Todo.php` - イベントディスパッチ設定追加
+
+```php
+protected $dispatchesEvents = [
+    'created' => \App\Events\TodoCreated::class,
+    'updated' => \App\Events\TodoUpdated::class,
+    'deleted' => \App\Events\TodoDeleted::class,
+];
+```
+
+### カバレッジ改善見込み
+
+Phase 29-D で追加した69テストにより、以下のコンポーネントがテスト対象に：
+
+- ✅ **Commands** (2): SendDeadlineNotifications, SendWeeklyReports
+- ✅ **Controllers** (5): Team, ExportTemplate, Dashboard, Profile, Comment
+- ✅ **API Controllers** (2): Api/Auth, Api/Todo
+- ✅ **Services** (2): SlackService, GitHubService
+- ✅ **Observers** (2): UserObserver, TodoObserver
+- ✅ **Resources** (1): TodoResource
+- ✅ **Events** (3): TodoCreated, TodoUpdated, TodoDeleted
+
+**次回CI実行時にCodecovで正確なカバレッジを確認可能**
+
+### 今後の改善予定
+
+- ルート設定完了後、残り11テストを修正（Teams, ExportTemplates関連）
+- 更なるカバレッジ向上: Webhook Controllers, Middleware, Policies

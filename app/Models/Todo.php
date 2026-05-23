@@ -35,6 +35,12 @@ class Todo extends Model
         'is_pinned' => 'boolean'
     ];
 
+    protected $dispatchesEvents = [
+        'created' => \App\Events\TodoCreated::class,
+        'updated' => \App\Events\TodoUpdated::class,
+        'deleted' => \App\Events\TodoDeleted::class,
+    ];
+
     // ========================================
     // リレーション
     // ========================================
