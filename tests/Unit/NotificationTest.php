@@ -8,6 +8,11 @@ use App\Models\Comment;
 use App\Notifications\TodoCommentNotification;
 use App\Notifications\TodoDeadlineNotification;
 use App\Notifications\WeeklyReportNotification;
+use App\Notifications\TodoAssignedNotification;
+use App\Notifications\TodoSlackNotification;
+use App\Notifications\TeamInvitationNotification;
+use App\Models\TeamInvitation;
+use App\Models\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use NotificationChannels\WebPush\WebPushChannel;
@@ -335,5 +340,184 @@ class NotificationTest extends TestCase
         $notification = new WeeklyReportNotification($stats, $upcomingTodos);
 
         $this->assertInstanceOf(\Illuminate\Contracts\Queue\ShouldQueue::class, $notification);
+    }
+
+    // ========================================
+    // TodoAssignedNotification Tests
+    // ========================================
+
+    public function test_TodoAssignedNotification_viaメソッドが正しいチャンネルを返す()
+    {
+        $user = User::factory()->create();
+        $assignedBy = User::factory()->create();
+        $todo = Todo::factory()->create(['user_id' => $user->id]);
+
+        $notification = new TodoAssignedNotification($todo, $assignedBy);
+        $channels = $notification->via($user);
+
+        $this->assertContains('database', $channels);
+        $this->assertContains('mail', $channels);
+        $this->assertContains(WebPushChannel::class, $channels);
+    }
+
+    public function test_TodoAssignedNotification_メール無効時はmailチャンネルが含まれない()
+    {
+        $user = User::factory()->create();
+        $user->notificationSetting()->create([
+            'task_assigned_enabled' => false,
+            'push_enabled' => true
+        ]);
+        $assignedBy = User::factory()->create();
+        $todo = Todo::factory()->create(['user_id' => $user->id]);
+
+        $notification = new TodoAssignedNotification($todo, $assignedBy);
+        $channels = $notification->via($user);
+
+        $this->assertContains('database', $channels);
+        $this->assertNotContains('mail', $channels);
+        $this->assertContains(WebPushChannel::class, $channels);
+    }
+
+    public function test_TodoAssignedNotification_toDatabaseが正しいデータを返す()
+    {
+        $user = User::factory()->create();
+        $assignedBy = User::factory()->create(['name' => '割当者']);
+        $todo = Todo::factory()->create([
+            'user_id' => $user->id,
+            'title' => 'テストTodo'
+        ]);
+
+        $notification = new TodoAssignedNotification($todo, $assignedBy);
+        $data = $notification->toDatabase($user);
+
+        $this->assertEquals($todo->id, $data['todo_id']);
+        $this->assertEquals('テストTodo', $data['todo_title']);
+        $this->assertEquals('割当者', $data['assigned_by']);
+        $this->assertEquals($assignedBy->id, $data['assigned_by_id']);
+        $this->assertStringContainsString('割当者', $data['message']);
+        $this->assertStringContainsString('テストTodo', $data['message']);
+    }
+
+    public function test_TodoAssignedNotification_toMailが正しいメールメッセージを返す()
+    {
+        $user = User::factory()->create(['name' => '受取人']);
+        $assignedBy = User::factory()->create(['name' => '割当者']);
+        $todo = Todo::factory()->create([
+            'user_id' => $user->id,
+            'title' => 'テストTodo'
+        ]);
+
+        $notification = new TodoAssignedNotification($todo, $assignedBy);
+        $mailMessage = $notification->toMail($user);
+
+        $this->assertEquals("タスクが割り当てられました - テストTodo", $mailMessage->subject);
+        $this->assertStringContainsString('こんにちは、受取人さん', $mailMessage->greeting);
+        $this->assertStringContainsString('割当者', $mailMessage->introLines[0]);
+    }
+
+    public function test_TodoAssignedNotification_ShouldQueueインターフェースを実装()
+    {
+        $user = User::factory()->create();
+        $assignedBy = User::factory()->create();
+        $todo = Todo::factory()->create(['user_id' => $user->id]);
+
+        $notification = new TodoAssignedNotification($todo, $assignedBy);
+
+        $this->assertInstanceOf(\Illuminate\Contracts\Queue\ShouldQueue::class, $notification);
+    }
+
+    // ========================================
+    // TodoSlackNotification Tests
+    // ========================================
+
+    public function test_TodoSlackNotification_viaメソッドがdatabaseを返す()
+    {
+        $user = User::factory()->create();
+        $todo = Todo::factory()->create(['user_id' => $user->id]);
+
+        $notification = new TodoSlackNotification($todo, 'created');
+        $channels = $notification->via($user);
+
+        $this->assertEquals(['database'], $channels);
+    }
+
+    public function test_TodoSlackNotification_toArrayが正しいデータを返す_created()
+    {
+        $user = User::factory()->create();
+        $todo = Todo::factory()->create([
+            'user_id' => $user->id,
+            'title' => 'テストTodo',
+            'content' => 'テスト内容',
+            'end_date' => '2026-06-01'
+        ]);
+
+        $notification = new TodoSlackNotification($todo, 'created');
+        $data = $notification->toArray($user);
+
+        $this->assertEquals('新しいTodoが作成されました', $data['message']);
+        $this->assertEquals('created', $data['action']);
+        $this->assertEquals($todo->id, $data['todo_id']);
+        $this->assertEquals('テストTodo', $data['todo_title']);
+        $this->assertEquals('2026-06-01', $data['todo_end_date']);
+    }
+
+    public function test_TodoSlackNotification_toArrayが正しいデータを返す_各アクション()
+    {
+        $user = User::factory()->create();
+        $todo = Todo::factory()->create(['user_id' => $user->id, 'end_date' => now()]);
+
+        $actions = [
+            'created' => '新しいTodoが作成されました',
+            'updated' => 'Todoが更新されました',
+            'completed' => 'Todoが完了しました',
+            'due_soon' => 'Todoの期限が近づいています',
+        ];
+
+        foreach ($actions as $action => $expectedMessage) {
+            $notification = new TodoSlackNotification($todo, $action);
+            $data = $notification->toArray($user);
+            $this->assertEquals($expectedMessage, $data['message']);
+        }
+    }
+
+    // ========================================
+    // TeamInvitationNotification Tests
+    // ========================================
+
+    public function test_TeamInvitationNotification_viaメソッドがmailを返す()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $invitation = TeamInvitation::factory()->create([
+            'team_id' => $team->id,
+            'email' => $user->email,
+            'role' => 'member'
+        ]);
+
+        $notification = new TeamInvitationNotification($invitation);
+        $channels = $notification->via($user);
+
+        $this->assertEquals(['mail'], $channels);
+    }
+
+    public function test_TeamInvitationNotification_toMailが正しいメールメッセージを返す()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create(['name' => 'テストチーム']);
+        $invitation = TeamInvitation::factory()->create([
+            'team_id' => $team->id,
+            'email' => $user->email,
+            'role' => 'member',
+            'token' => 'test-token'
+        ]);
+
+        $notification = new TeamInvitationNotification($invitation);
+        $mailMessage = $notification->toMail($user);
+
+        $this->assertEquals('テストチーム への招待', $mailMessage->subject);
+        $this->assertStringContainsString('テストチーム に招待されました', $mailMessage->introLines[0]);
+        $this->assertStringContainsString('あなたの権限: member', $mailMessage->introLines[1]);
+        // introLines[2] は action() の後に来る "このリンクは7日間有効です" の行
+        // introLinesではなく、actionボタンの後の行として含まれる
     }
 }
