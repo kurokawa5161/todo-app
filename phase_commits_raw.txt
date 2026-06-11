@@ -1,0 +1,84 @@
+054d864 feat: Phase 29-F Part1完了（Notificationテスト拡充）
+671495e feat: Phase 29-E完了（Webhook & Middleware テスト追加）
+5f4b7be fix: 残り11テスト修正完了（全198テスト成功）
+4926df0 feat: Phase 29-D完了（コンポーネントテスト追加・カバレッジ向上）
+acd7492 feat: Phase 29-C完了（パフォーマンステスト）
+ac460fc fix: Duskテスト修正（RefreshDatabase追加、ChromeDriver更新）
+d2bc633 feat: Phase 29-B完了（E2Eテスト・Laravel Dusk導入）
+4415504 docs: Phase 29-A完了（CI/CDカバレッジ強化・Codecov統合）
+4209129 fix: カバレッジ最小値チェックを一時的に無効化
+46f65ae fix: SendWeeklyReports.php構文エラー修正
+e35459b feat: Phase 29-A完了（CI/CDカバレッジ強化）
+b2c8b9f docs: Phase 26-28引継ぎドキュメント作成・TESTING.md更新
+353b9c7 fix: Telescope本番環境クラス不在エラー対応（class_exists追加）
+27712da feat: Phase 26-28完了（テストカバレッジ改善・セキュリティ強化）
+9d0b0d0 fix: Telescope本番ビルドエラー修正（開発環境のみ有効化）
+0aff56b feat: Phase 25完了（高度なパフォーマンス監視）
+cc4dead feat: Phase 25A完了（Redis導入）
+b3f872c feat: Phase 24B完了（パフォーマンス最適化）
+4056770 feat: ヘルスチェックエンドポイント追加 (Phase 24A-D完了)
+4e41441 fix: docker-compose.prod.yml version フィールド削除（警告解消）
+8453731 feat: Docker本番環境設定ファイル追加
+60ad6ed feat: GitHub Actions Docker CI/CD追加
+3c81c2d test: TodoObserver影響でテスト失敗を修正
+1551013 feat: フェーズ23完了（External Service Integration - Slack/GitHub Webhook統合）
+628bfbe feat: フェーズ22完了（Advanced Dashboard Customization）
+1b3574d feat: フェーズ21C-3完了（カスタムエクスポートテンプレート機能）
+548b303 fix: ガントチャートのSyntaxErrorを修正（illegal return statement）
+50820c8 fix: ガントチャート初期化エラーを修正
+057081e fix: start_date必須化マイグレーションをシンプル化（制約のみ）
+4ace95a fix: start_date必須化マイグレーションのMySQL strict mode対応
+48de950 fix: start_date必須化マイグレーションの不正データ対応を強化
+32be8bb fix: start_date必須化マイグレーションのデプロイエラー修正
+7d64706 feat: フェーズ21B/21C完了（ヒートマップ・ガントチャート・エクスポート機能拡張）
+ce20f8e feat: フェーズ21B/21C完了（ヒートマップ・ガントチャート・エクスポート機能拡張）
+1f9e614 feat: フェーズ21B/21C完了（ヒートマップ・ガントチャート・エクスポート機能拡張）
+f61be5a fix: start_date必須化に伴うテスト修正
+510e63c feat: フェーズ21完了（年間PDF・ヒートマップ・ガントチャート・JSON/XML/Excelエクスポート）
+df0fdf6 feat: フェーズ21A完了（Chart.js統合・週次/月次/年間グラフ）
+de6587f feat: フェーズ20B完全完了（検索UI/UX改善）
+8a2d957 feat: フェーズ20B完了（高度な検索機能・検索履歴・サジェスト）
+f1c8969 fix: Scout設定のデプロイエラー修正
+fdf7117 feat: 本番環境で自動的にデータベース検索に切り替え
+c3d4458 feat: フェーズ20A・20B完了（全文検索エンジン導入・Scout検索統合）
+f741fd6 feat: フェーズ19B・19C完全完了（プッシュ通知・PWA完全実装）
+7f0a163 feat: フェーズ19B完了（プッシュ通知・PWA・通知設定UI）
+d145b67 feat: フェーズ19A完了（メール通知強化：コメント通知・タスク割り当て通知）
+ab43780 feat: DB閲覧機能完成 + CSP設定修正（開発環境対応）
+50cffb5 fix: Linuxでのクラス名大文字小文字エラー修正（SavedSearch, ApiLog）
+f7ae097 feat: フェーズ19A完了（メール通知強化：週次レポート・リマインダーカスタマイズ）
+f3f4ffb feat: フェーズ19A完了（メール通知強化：週次レポート・リマインダーカスタマイズ）
+823817e feat: フェーズ18完了（セキュリティ強化）
+70cba60 feat: フェーズ17パートC完了（ページネーション最適化）
+20f3f44 feat: フェーズ16完了（外部サービス連携）
+0f31715 feat: フェーズ15完了（リアルタイム機能）
+6b61e0c fix: 個人Todo編集時の null参照エラー修正
+46aa6b5 feat: フェーズ14パートC完了（チーム単位のTodo管理）
+ddba441 feat: フェーズ14パートB完了（メンバー招待機能）
+fc4b168 feat: フェーズ14パートA完了（チーム作成・管理）
+1ae7520 feat: フェーズ13パートC完了（レポート・エクスポート）
+bc7f9fd feat: フェーズ13パートB完了（グラフ表示）
+402162f fix: MySQL対応（strftime→whereBetween）
+fe86fa6 feat: フェーズ13パートA完了（統計ダッシュボード）
+0944f06 feat: フェーズ12完了（API拡張・改善）
+35a60da fix: APIルート名を変更してWebルートとの競合を解消
+69f6da7 fix: GitHub ActionsにViteビルドステップを追加
+2e7394e feat: フェーズ11完了（Docker・GitHub Actions CI/CD）
+f3bb915 feat: フェーズ10完了（API開発：RESTful API・Sanctum・API Resource）
+8f45471 feat: フェーズ9-C完了（テストデータ管理・日本語化）
+fe14bf6 feat: フェーズ9-C完了（テストデータ管理）
+4994ed3 feat: フェーズ9-B完了（Unit Test）
+537361a feat: フェーズ9-A完了（Feature Test）
+f0123ac feat: フェーズ8完了（セキュリティ・認可）
+13a0382 feat: フェーズ7完了（パフォーマンス最適化）
+074d039 feat: フェーズ6-C完了（リマインダー設定機能）
+1e692de feat: フェーズ6-A,B完了（期限通知・スケジューラー）
+1f2437a feat: フェーズ5-C完了（保存済み検索条件機能）
+31e8b7a feat: フェーズ5完了（検索・フィルター・タグ機能）
+033bc0f feat: フェーズ4-C完了（サブタスク追加のAjax化）
+abe2d9d feat: 完了/ピン留めをAjax化（フェーズ4-A,B完了）
+367acc2 feat: フェーズ3の機能追加（画像アップロード）
+dbb61fb feat: フェーズ2の機能追加（サブタスク/コメント/ピン留め/カテゴリ色）
+2d1d1b3 feat: フェーズ1の機能追加（優先度/並び替え/カウント/ログアウト）
+77f902d fix:tailwindcsswo
+810ffa9 fix:大文字小文字修正
