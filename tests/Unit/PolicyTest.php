@@ -8,12 +8,19 @@ use App\Models\Category;
 use App\Models\Tag;
 use App\Models\Comment;
 use App\Models\SavedSearch;
+use App\Models\Team;
+use App\Models\ExportTemplate;
+use App\Models\DashboardWidget;
 use App\Policies\TodoPolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\TagPolicy;
 use App\Policies\CommentPolicy;
 use App\Policies\SavedSearchPolicy;
+use App\Policies\TeamPolicy;
+use App\Policies\ExportTemplatePolicy;
+use App\Policies\DashboardWidgetPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class PolicyTest extends TestCase
@@ -347,5 +354,244 @@ class PolicyTest extends TestCase
         $policy = new SavedSearchPolicy();
 
         $this->assertFalse($policy->delete($user, $savedSearch));
+    }
+
+    // ========================================
+    // TeamPolicy Tests
+    // ========================================
+
+    public function test_TeamPolicy_全ユーザーがチーム一覧を閲覧できる()
+    {
+        $user = User::factory()->create();
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->viewAny($user));
+    }
+
+    public function test_TeamPolicy_全ユーザーがチームを作成できる()
+    {
+        $user = User::factory()->create();
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->create($user));
+    }
+
+    public function test_TeamPolicy_メンバーはチームを閲覧できる()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $team->users()->attach($user->id, ['role' => 'member']);
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->view($user, $team));
+    }
+
+    public function test_TeamPolicy_非メンバーはチームを閲覧できない()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $policy = new TeamPolicy();
+
+        $this->assertFalse($policy->view($user, $team));
+    }
+
+    public function test_TeamPolicy_Ownerはチームを更新できる()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $team->users()->attach($user->id, ['role' => 'owner']);
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->update($user, $team));
+    }
+
+    public function test_TeamPolicy_Adminはチームを更新できる()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $team->users()->attach($user->id, ['role' => 'admin']);
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->update($user, $team));
+    }
+
+    public function test_TeamPolicy_Memberはチームを更新できない()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $team->users()->attach($user->id, ['role' => 'member']);
+        $policy = new TeamPolicy();
+
+        $this->assertFalse($policy->update($user, $team));
+    }
+
+    public function test_TeamPolicy_Ownerのみチームを削除できる()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $team->users()->attach($user->id, ['role' => 'owner']);
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->delete($user, $team));
+    }
+
+    public function test_TeamPolicy_AdminはチームTodoを作成できる()
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $team->users()->attach($user->id, ['role' => 'admin']);
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->createTeamTodo($user, $team));
+    }
+
+    public function test_TeamPolicy_Memberは自分のチームTodoを編集できる()
+    {
+        Event::fake(); // Reverb依存回避
+
+        $user = User::factory()->create();
+        $team = Team::factory()->create();
+        $team->users()->attach($user->id, ['role' => 'member']);
+        $todo = Todo::factory()->create(['user_id' => $user->id, 'team_id' => $team->id]);
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->updateTeamTodo($user, $team, $todo));
+    }
+
+    public function test_TeamPolicy_Ownerは他人のチームTodoを編集できる()
+    {
+        Event::fake(); // Reverb依存回避
+
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $team = Team::factory()->create();
+        $team->users()->attach($owner->id, ['role' => 'owner']);
+        $team->users()->attach($member->id, ['role' => 'member']);
+        $todo = Todo::factory()->create(['user_id' => $member->id, 'team_id' => $team->id]);
+        $policy = new TeamPolicy();
+
+        $this->assertTrue($policy->updateTeamTodo($owner, $team, $todo));
+    }
+
+    // ========================================
+    // ExportTemplatePolicy Tests
+    // ========================================
+
+    public function test_ExportTemplatePolicy_自分のテンプレートは閲覧できる()
+    {
+        $user = User::factory()->create();
+        $template = ExportTemplate::factory()->create(['user_id' => $user->id]);
+        $policy = new ExportTemplatePolicy();
+
+        $this->assertTrue($policy->view($user, $template));
+    }
+
+    public function test_ExportTemplatePolicy_他人のテンプレートは閲覧できない()
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $template = ExportTemplate::factory()->create(['user_id' => $otherUser->id]);
+        $policy = new ExportTemplatePolicy();
+
+        $this->assertFalse($policy->view($user, $template));
+    }
+
+    public function test_ExportTemplatePolicy_自分のテンプレートは更新できる()
+    {
+        $user = User::factory()->create();
+        $template = ExportTemplate::factory()->create(['user_id' => $user->id]);
+        $policy = new ExportTemplatePolicy();
+
+        $this->assertTrue($policy->update($user, $template));
+    }
+
+    public function test_ExportTemplatePolicy_他人のテンプレートは更新できない()
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $template = ExportTemplate::factory()->create(['user_id' => $otherUser->id]);
+        $policy = new ExportTemplatePolicy();
+
+        $this->assertFalse($policy->update($user, $template));
+    }
+
+    public function test_ExportTemplatePolicy_自分のテンプレートは削除できる()
+    {
+        $user = User::factory()->create();
+        $template = ExportTemplate::factory()->create(['user_id' => $user->id]);
+        $policy = new ExportTemplatePolicy();
+
+        $this->assertTrue($policy->delete($user, $template));
+    }
+
+    public function test_ExportTemplatePolicy_他人のテンプレートは削除できない()
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $template = ExportTemplate::factory()->create(['user_id' => $otherUser->id]);
+        $policy = new ExportTemplatePolicy();
+
+        $this->assertFalse($policy->delete($user, $template));
+    }
+
+    // ========================================
+    // DashboardWidgetPolicy Tests
+    // ========================================
+
+    public function test_DashboardWidgetPolicy_自分のウィジェットは閲覧できる()
+    {
+        $user = User::factory()->create();
+        $widget = DashboardWidget::factory()->create(['user_id' => $user->id]);
+        $policy = new DashboardWidgetPolicy();
+
+        $this->assertTrue($policy->view($user, $widget));
+    }
+
+    public function test_DashboardWidgetPolicy_他人のウィジェットは閲覧できない()
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $widget = DashboardWidget::factory()->create(['user_id' => $otherUser->id]);
+        $policy = new DashboardWidgetPolicy();
+
+        $this->assertFalse($policy->view($user, $widget));
+    }
+
+    public function test_DashboardWidgetPolicy_自分のウィジェットは更新できる()
+    {
+        $user = User::factory()->create();
+        $widget = DashboardWidget::factory()->create(['user_id' => $user->id]);
+        $policy = new DashboardWidgetPolicy();
+
+        $this->assertTrue($policy->update($user, $widget));
+    }
+
+    public function test_DashboardWidgetPolicy_他人のウィジェットは更新できない()
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $widget = DashboardWidget::factory()->create(['user_id' => $otherUser->id]);
+        $policy = new DashboardWidgetPolicy();
+
+        $this->assertFalse($policy->update($user, $widget));
+    }
+
+    public function test_DashboardWidgetPolicy_自分のウィジェットは削除できる()
+    {
+        $user = User::factory()->create();
+        $widget = DashboardWidget::factory()->create(['user_id' => $user->id]);
+        $policy = new DashboardWidgetPolicy();
+
+        $this->assertTrue($policy->delete($user, $widget));
+    }
+
+    public function test_DashboardWidgetPolicy_他人のウィジェットは削除できない()
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $widget = DashboardWidget::factory()->create(['user_id' => $otherUser->id]);
+        $policy = new DashboardWidgetPolicy();
+
+        $this->assertFalse($policy->delete($user, $widget));
     }
 }
