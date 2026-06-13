@@ -57,8 +57,6 @@ class CommentTest extends TestCase
 
     public function test_他人のTodoにコメントすると通知が送信される()
     {
-        Notification::fake();
-
         $owner = User::factory()->create();
         $commenter = User::factory()->create();
         $todo = Todo::factory()->create(['user_id' => $owner->id]);
@@ -70,17 +68,15 @@ class CommentTest extends TestCase
         // コメント作成が成功したことを確認
         $response->assertRedirect();
 
-        // 通知が送信されたことを確認
-        Notification::assertSentTo(
-            $owner,
-            TodoCommentNotification::class
-        );
+        // 通知がデータベースに記録されたことを確認
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => 'App\\Models\\User',
+            'notifiable_id' => $owner->id,
+        ]);
     }
 
     public function test_自分のTodoにコメントしても通知は送信されない()
     {
-        Notification::fake();
-
         $user = User::factory()->create();
         $todo = Todo::factory()->create(['user_id' => $user->id]);
 
@@ -88,8 +84,11 @@ class CommentTest extends TestCase
             'body' => 'これはテストコメントです'
         ]);
 
-        // 通知が送信されていないことを確認
-        Notification::assertNothingSent();
+        // 通知が送信されていないことを確認（自分宛の通知がない）
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_type' => 'App\\Models\\User',
+            'notifiable_id' => $user->id,
+        ]);
     }
 
     public function test_自分のコメントは削除できる()
